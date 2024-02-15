@@ -1,0 +1,39 @@
+version: "3.3"
+name: lucian
+
+services:
+
+  lucian-ssh-server:
+    image: jsfraz/lucian-ssh-server
+    container_name: lucian-ssh-server
+    environment:
+      - POSTGRES_DB=lucian
+      - POSTGRES_USER=lucian
+      # REPLACE!!!
+      - POSTGRES_PASSWORD=V3ryH4rdPa55w0rd
+    ports:
+      # CHANGE!!!
+      - "YOUR_PUBLIC_IP:22:2222"
+    volumes:
+      - lucian-ssh-server:/app
+
+  lucian-postgres:
+    image: postgres:alpine
+    container_name: lucian-postgres
+    environment:
+      - POSTGRES_DB=lucian
+      - POSTGRES_USER=lucian
+      # REPLACE!!!
+      - POSTGRES_PASSWORD=V3ryH4rdPa55w0rd
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+networks:
+  lucian:
+    name: lucian
+
+volumes:
+  lucian-ssh-server:
+  postgres_data:

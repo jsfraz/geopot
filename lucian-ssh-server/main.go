@@ -12,6 +12,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+// https://docs.freeipapi.com/
+
 func main() {
 	log.SetPrefix("lucian-ssh-server: ")
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmicroseconds)
@@ -33,11 +35,11 @@ func main() {
 	config.AddHostKey(privateKey)
 
 	// Listener
-	listener, err := net.Listen("tcp", "localhost:2222")
+	listener, err := net.Listen("tcp", "0.0.0.0:2222")
 	if err != nil {
-		log.Fatalf("Failed to listen on port 2222: %v", err)
+		log.Fatalf("Failed to listen on 0.0.0.0:2222: %v", err)
 	}
-	log.Println("SSH server is running on localhost:2222")
+	log.Println("SSH server is running on 0.0.0.0:2222")
 
 	for {
 		conn, err := listener.Accept()

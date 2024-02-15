@@ -1,0 +1,3 @@
+# lucian
+
+`sudo ./compose.sh`
