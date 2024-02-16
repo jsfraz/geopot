@@ -11,8 +11,6 @@ services:
       - POSTGRES_USER=lucian
       # REPLACE!!!
       - POSTGRES_PASSWORD=V3ryH4rdPa55w0rd
-    ports:
-      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: always
