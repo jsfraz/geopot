@@ -20,6 +20,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// TODO rate limiting for API
 func main() {
 	// Logging
 	log.SetPrefix("lucian-ssh-server: ")
@@ -154,19 +155,16 @@ func getIpInfo(ipAddress string) (*string, error) {
 
 	response, err := http.Get(url)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	if response.StatusCode != 200 {
 		err = fmt.Errorf("status code %s", response.Status)
-		log.Println(err)
 		return nil, err
 	}
 	defer response.Body.Close()
 
 	body, err := io.ReadAll(response.Body)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
