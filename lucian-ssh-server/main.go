@@ -20,6 +20,8 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// L.U.C.I.A.N => Location-based Unauthorized Connection Investigation and Analysis Network
+
 // TODO rate limiting for API
 func main() {
 	// Logging
