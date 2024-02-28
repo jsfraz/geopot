@@ -6,9 +6,11 @@ import (
 	"net/http"
 )
 
-// TODO godoc
-
-// https://docs.freeipapi.com/
+// Get details about IP address from https://docs.freeipapi.com/
+//
+//	@param ipAddress
+//	@return *string
+//	@return error
 func GetIpInfo(ipAddress string) (*string, error) {
 	url := fmt.Sprintf("https://freeipapi.com/api/json/%s", ipAddress)
 

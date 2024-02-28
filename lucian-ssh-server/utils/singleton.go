@@ -5,8 +5,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// TODO godoc
-
+// Singleton for database clients.
 type Singleton struct {
 	Postgres *gorm.DB
 	Redis    *rds.Client
@@ -14,7 +13,9 @@ type Singleton struct {
 
 var instance *Singleton
 
-// Returns singleton instance
+// Return singleton instance.
+//
+//	@return *Singleton
 func GetSingleton() *Singleton {
 	if instance == nil {
 		instance = new(Singleton)

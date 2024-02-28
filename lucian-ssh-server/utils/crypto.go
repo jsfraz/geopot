@@ -10,8 +10,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// TODO godoc
-
+// Generate and save server's private key.
+//
+//	@param keyPath
+//	@return ssh.Signer
+//	@return error
 func GeneratePrivateKey(keyPath string) (ssh.Signer, error) {
 	// Check if the private key file exists
 	_, err := os.Stat(keyPath)
@@ -44,6 +47,11 @@ func GeneratePrivateKey(keyPath string) (ssh.Signer, error) {
 	return privateKey, nil
 }
 
+// Save private key to PEM file.
+//
+//	@param path
+//	@param keyBytes
+//	@return error
 func savePrivateKeyToFile(path string, keyBytes []byte) error {
 	file, err := os.Create(path)
 	if err != nil {

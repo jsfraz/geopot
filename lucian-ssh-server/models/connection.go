@@ -5,8 +5,7 @@ import (
 	"time"
 )
 
-// TODO godoc
-
+// SSH connection
 type Connection struct {
 	ID uint64 `json:"id" gorm:"primarykey"`
 
@@ -29,14 +28,62 @@ type Connection struct {
 	Timestamp time.Time `json:"timestamp"`
 }
 
-func NewConnection(jsonData string, user string, password string, timestamp time.Time) (*Connection, error) {
+// Create new SSH connection info.
+//
+//	@param host
+//	@param user
+//	@param password
+//	@param timestamp
+//	@return *Connection
+func NewConnection(host string, user string, password string, timestamp time.Time) *Connection {
 	var connection Connection
-	err := json.Unmarshal([]byte(jsonData), &connection)
-	if err != nil {
-		return nil, err
-	}
+	connection.IPAddress = host
 	connection.User = user
 	connection.Password = password
 	connection.Timestamp = timestamp
-	return &connection, nil
+	return &connection
+}
+
+// Set details about SSH connection.
+//
+//	@receiver c
+//	@param jsonData
+//	@return error
+func (c *Connection) SetConnectionDetails(jsonData string) error {
+	var connection Connection
+	err := json.Unmarshal([]byte(jsonData), &connection)
+	if err != nil {
+		return err
+	}
+	c.IPVersion = connection.IPVersion
+	c.Latitude = connection.Latitude
+	c.Longitude = connection.Longitude
+	c.CountryName = connection.CountryName
+	c.CountryCode = connection.CountryCode
+	c.TimeZone = connection.TimeZone
+	c.ZipCode = connection.ZipCode
+	c.CityName = connection.CityName
+	c.RegionName = connection.RegionName
+	c.IsProxy = connection.IsProxy
+	c.Continent = connection.Continent
+	c.ContinentCode = connection.ContinentCode
+	return nil
+}
+
+// Create Connestion instance from JSON.
+//
+//	@param jsonData
+//	@return *Connection
+//	@return error
+func ConnectionFromJson(jsonData string) (*Connection, error) {
+	var c Connection
+	err := json.Unmarshal([]byte(jsonData), &c)
+	if err != nil {
+		return nil, err
+	}
+	return &c, nil
+}
+
+func (c Connection) MarshalBinary() ([]byte, error) {
+	return json.Marshal(c)
 }

@@ -9,10 +9,17 @@ services:
     environment:
       - POSTGRES_DB=lucian
       - POSTGRES_USER=lucian
-      # REPLACE!!!
-      - POSTGRES_PASSWORD=V3ryH4rdPa55w0rd
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  lucian-redis:
+    image: "redis:alpine"
+    container_name: lucian-redis
+    command: /bin/sh -c "redis-server --requirepass ${REDIS_PASSWORD}"
+    volumes:
+      - redis_data:/data
     restart: always
 
   lucian-ssh-server:
@@ -22,14 +29,15 @@ services:
       - lucian-postgres
     environment:
       - POSTGRES_USER=lucian
-      # REPLACE!!!
-      - POSTGRES_PASSWORD=V3ryH4rdPa55w0rd
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_SERVER=lucian-postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=lucian
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_SERVER=lucian-redis
+      - REDIS_PORT=6379
     ports:
-      # CHANGE!!!
-      - "YOUR_PUBLIC_IP:22:2222"
+      - "${PUBLIC_IP}:22:2222"
     volumes:
       - lucian-ssh-server:/app
     restart: always
@@ -41,3 +49,4 @@ networks:
 volumes:
   lucian-ssh-server:
   postgres_data:
+  redis_data:
