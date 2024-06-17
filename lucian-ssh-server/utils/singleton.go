@@ -1,14 +1,14 @@
 package utils
 
 import (
-	rds "github.com/go-redis/redis"
+	"github.com/valkey-io/valkey-go"
 	"gorm.io/gorm"
 )
 
 // Singleton for database clients.
 type Singleton struct {
 	Postgres *gorm.DB
-	Redis    *rds.Client
+	Valkey   valkey.Client
 }
 
 var instance *Singleton

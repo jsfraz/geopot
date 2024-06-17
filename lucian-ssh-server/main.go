@@ -22,7 +22,7 @@ func main() {
 	// Setup databases
 	time.Sleep(time.Second * 5)
 	database.SetupPostgres()
-	database.SetupRedis()
+	database.SetupValkey()
 
 	// Server config with password callback denying everything
 	config := &ssh.ServerConfig{
@@ -37,7 +37,7 @@ func main() {
 			}
 			// Upload to Redis
 			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
-			err = database.PushRedisRecord(*connection)
+			err = database.PushRecord(*connection)
 			if err != nil {
 				log.Println(err)
 			}
@@ -88,7 +88,7 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 func apiCallGoroutine() {
 	for {
 		// Fetch oldest records from Redis, get IP info and upload to Postgres
-		connection, err := database.PopRedisRecord()
+		connection, err := database.PopRecord()
 		if err != nil {
 			log.Println(err)
 		}
