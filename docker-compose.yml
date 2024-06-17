@@ -1,4 +1,3 @@
-version: "3.3"
 name: lucian
 
 services:
@@ -14,13 +13,12 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: always
 
-  lucian-redis:
-    image: "redis:alpine"
-    container_name: lucian-redis
-    command: /bin/sh -c "redis-server --requirepass ${REDIS_PASSWORD}"
+  lucian-valkey:
+    image: valkey/valkey:latest
+    container_name: lucian-valkey
+    command: /bin/sh -c "redis-server --requirepass ${VALKEY_PASSWORD}"
     volumes:
-      - redis_data:/data
-    restart: always
+      - valkey_data:/data
 
   lucian-ssh-server:
     image: jsfraz/lucian-ssh-server
@@ -33,9 +31,9 @@ services:
       - POSTGRES_SERVER=lucian-postgres
       - POSTGRES_PORT=5432
       - POSTGRES_DB=lucian
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - REDIS_SERVER=lucian-redis
-      - REDIS_PORT=6379
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
+      - VALKEY_SERVER=lucian-valkey
+      - VALKEY_PORT=6379
     ports:
       - "${PUBLIC_IP}:22:2222"
     volumes:
@@ -49,4 +47,4 @@ networks:
 volumes:
   lucian-ssh-server:
   postgres_data:
-  redis_data:
+  valkey_data:
