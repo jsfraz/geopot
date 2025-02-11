@@ -3,7 +3,7 @@ name: lucian
 services:
 
   lucian-postgres:
-    image: postgres:alpine
+    image: postgres:16-alpine
     container_name: lucian-postgres
     environment:
       - POSTGRES_DB=lucian
@@ -19,6 +19,7 @@ services:
     command: /bin/sh -c "redis-server --requirepass ${VALKEY_PASSWORD}"
     volumes:
       - valkey_data:/data
+    restart: always
 
   lucian-ssh-server:
     image: jsfraz/lucian-ssh-server
