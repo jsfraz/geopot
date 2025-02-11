@@ -18,6 +18,14 @@ The main idea is that you don't use default SSH port to connect to your remote s
 
 Change database passwords and public IP address in `.env` file and run `sudo ./compose.sh` to build the image and compose the project.
 
+.env example:
+
+```env
+POSTGRES_PASSWORD=hard_password
+VALKEY_PASSWORD=hard_password
+PUBLIC_IP=127.0.0.1
+```
+
 ## Future plans
 
 Frontend coming soon! (soon is relative)
