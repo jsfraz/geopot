@@ -12,8 +12,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// L.U.C.I.A.N => Location-based Unauthorized Connection Investigation and Analysis Network
-
 func main() {
 	// Logging
 	log.SetPrefix("geopot: ")

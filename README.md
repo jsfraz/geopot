@@ -18,6 +18,12 @@ The main idea is that you don't use default SSH port to connect to your remote s
 
 | Variable          | Description           |
 |-------------------|-----------------------|
+| POSTGRES_USER     | PostgreSQL user       |
 | POSTGRES_PASSWORD | PostgreSQL password   |
+| POSTGRES_SERVER   | PostgreSQL server     |
+| POSTGRES_PORT     | PostgreSQL port       |
+| POSTGRES_DB       | PostgreSQL database   |
 | VALKEY_PASSWORD   | Valkey password       |
+| VALKEY_SERVER     | Valkey server         |
+| VALKEY_PORT       | Valkey port           |
 | PUBLIC_IP         | Public IP of honeypot |

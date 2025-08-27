@@ -70,7 +70,7 @@ func (c *Connection) SetConnectionDetails(jsonData string) error {
 	return nil
 }
 
-// Create Connestion instance from JSON.
+// Create Connection instance from JSON.
 //
 //	@param jsonData
 //	@return *Connection

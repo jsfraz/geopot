@@ -2,15 +2,16 @@ name: geopot
 
 services:
 
-  geopot-postgres:
-    image: postgres:17-alpine
-    container_name: geopot-postgres
+  geopot-timescaledb:
+    image: timescale/timescaledb:latest-pg17
+    container_name: geopot-timescaledb
     environment:
       - POSTGRES_DB=geopot
       - POSTGRES_USER=geopot
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/pgdata
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - timescaledb_data:/pgdata
     restart: always
 
   geopot-valkey:
@@ -25,7 +26,7 @@ services:
   #  image: jsfraz/geopot
   #  container_name: geopot
   #  depends_on:
-  #    - geopot-postgres
+  #    - geopot-timescaledb
   #  environment:
   #    - POSTGRES_USER=geopot
   #    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -47,5 +48,5 @@ networks:
 
 volumes:
   geopot-ssh-server:
-  postgres_data:
+  timescaledb_data:
   valkey_data:
