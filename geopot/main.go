@@ -60,6 +60,9 @@ func main() {
 	// API call goroutine
 	go apiCallGoroutine()
 
+	// HTTP file server goroutine
+	go utils.ServeFiles("./static", 8080)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
