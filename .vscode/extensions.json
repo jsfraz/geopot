@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "davidanson.vscode-markdownlint",
+    "gruntfuggly.todo-tree",
+    "wakatime.vscode-wakatime",
+    "eamodio.gitlens"
+  ]
+}

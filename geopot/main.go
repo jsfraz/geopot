@@ -5,9 +5,9 @@ import (
 	"net"
 	"time"
 
-	"jsfraz/lucian-ssh-server/database"
-	"jsfraz/lucian-ssh-server/models"
-	"jsfraz/lucian-ssh-server/utils"
+	"jsfraz/geopot/database"
+	"jsfraz/geopot/models"
+	"jsfraz/geopot/utils"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -16,7 +16,7 @@ import (
 
 func main() {
 	// Logging
-	log.SetPrefix("lucian-ssh-server: ")
+	log.SetPrefix("geopot: ")
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmicroseconds)
 
 	// Setup databases

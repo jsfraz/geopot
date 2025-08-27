@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-	"jsfraz/lucian-ssh-server/models"
-	"jsfraz/lucian-ssh-server/utils"
+	"jsfraz/geopot/models"
+	"jsfraz/geopot/utils"
 	"log"
 	"os"
 

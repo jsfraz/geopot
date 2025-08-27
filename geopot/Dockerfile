@@ -14,7 +14,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o lucian
+RUN go build -o geopot
 
 # Start a new stage using a minimal Alpine image
 FROM alpine:latest
@@ -23,10 +23,10 @@ FROM alpine:latest
 WORKDIR /app
 
 # Copy the built binary from the previous stage
-COPY --from=build /app/lucian .
+COPY --from=build /app/geopot .
 
 # Expose the port that the application will run on
 EXPOSE 2222
 
 # Command to run the application
-CMD ["./lucian"]
+CMD ["./geopot"]

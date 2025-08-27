@@ -1,6 +1,6 @@
-# lucian
+# geopot
 
-L.U.C.I.A.N (Location-based Unauthorized Connection Investigation and Analysis Network) as the (very cool) name suggests is intended for monitoring SSH login attempts and geolocating remote hosts who failed to login and gathering used credentials.
+Monitoring SSH login attempts and geolocating remote hosts who failed to login and gathering used credentials.
 
 ## How it works
 
@@ -14,18 +14,10 @@ The main idea is that you don't use default SSH port to connect to your remote s
 | 35083 | 4          | 180.101.88.252 | 31.311365 | 120.617691 | China        | CN           | +08:00     | 215003   | Suzhou    | Jiangsu     | false    | Asia      | AS             | root | egk       | 2024-02-28 14:30:53.744 +0100 |
 | 35082 | 4          | 180.101.88.252 | 31.311365 | 120.617691 | China        | CN           | +08:00     | 215003   | Suzhou    | Jiangsu     | false    | Asia      | AS             | root | 1qaz2wsx@ | 2024-02-28 14:30:53.397 +0100 |
 
-## Deploy
+## Environmental variables
 
-Change database passwords and public IP address in `.env` file and run `sudo ./compose.sh` to build the image and compose the project.
-
-.env example:
-
-```env
-POSTGRES_PASSWORD=hard_password
-VALKEY_PASSWORD=hard_password
-PUBLIC_IP=127.0.0.1
-```
-
-## Future plans
-
-Frontend coming soon! (soon is relative)
+| Variable          | Description           |
+|-------------------|-----------------------|
+| POSTGRES_PASSWORD | PostgreSQL password   |
+| VALKEY_PASSWORD   | Valkey password       |
+| PUBLIC_IP         | Public IP of honeypot |
