@@ -4,6 +4,7 @@
     "gruntfuggly.todo-tree",
     "wakatime.vscode-wakatime",
     "eamodio.gitlens",
-    "Vue.volar"
+    "Vue.volar",
+    "firefox-devtools.vscode-firefox-debug"
   ]
 }
