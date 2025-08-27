@@ -1,1 +1,3 @@
 .env
+geopot/private_key.pem
+geopot/__debug_*

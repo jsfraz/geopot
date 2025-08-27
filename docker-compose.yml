@@ -27,10 +27,11 @@ services:
   #  container_name: geopot
   #  depends_on:
   #    - geopot-timescaledb
+  #    - geopot-valkey
   #  environment:
   #    - POSTGRES_USER=geopot
   #    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #    - POSTGRES_SERVER=geopot-postgres
+  #    - POSTGRES_SERVER=geopot-timescaledb
   #    - POSTGRES_PORT=5432
   #    - POSTGRES_DB=geopot
   #    - VALKEY_PASSWORD=${VALKEY_PASSWORD}
