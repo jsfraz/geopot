@@ -27,3 +27,9 @@ The main idea is that you don't use default SSH port to connect to your remote s
 | VALKEY_SERVER     | Valkey server         |
 | VALKEY_PORT       | Valkey port           |
 | PUBLIC_IP         | Public IP of honeypot |
+
+## Testing
+
+```bash
+./test.sh number_of_attempts
+```

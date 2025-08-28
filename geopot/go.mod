@@ -6,7 +6,7 @@ require (
 	github.com/valkey-io/valkey-go v1.0.64
 	golang.org/x/crypto v0.41.0
 	gorm.io/driver/postgres v1.6.0
-	gorm.io/gorm v1.30.1
+	gorm.io/gorm v1.30.2
 )
 
 require github.com/onsi/gomega v1.38.2 // indirect

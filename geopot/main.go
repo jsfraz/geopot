@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"time"
@@ -11,6 +12,8 @@ import (
 
 	"golang.org/x/crypto/ssh"
 )
+
+const rateLimit = time.Millisecond * 1050
 
 func main() {
 	// Logging
@@ -58,7 +61,7 @@ func main() {
 	log.Println("SSH server is running on 0.0.0.0:2222")
 
 	// API call goroutine
-	go apiCallGoroutine()
+	go burstRateLimitCall(context.Background(), 60)
 
 	// HTTP file server goroutine
 	go utils.ServeFiles("./static", 8080)
@@ -85,35 +88,58 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 	defer sshConn.Close()
 }
 
-// Fetch connection information from Redis every 1 second (rate limiting for IP API), get IP details from API and insert to Postgres.
-func apiCallGoroutine() {
-	for {
-		// Fetch oldest records from Redis, get IP info and upload to Postgres
-		connection, err := database.PopRecord()
-		if err != nil {
-			log.Println(err)
+// Allows burst rate limiting client calls with the payloads
+// https://go.dev/wiki/RateLimiting
+//
+//	@param ctx
+//	@param burstLimit
+func burstRateLimitCall(ctx context.Context, burstLimit int) {
+	throttle := make(chan time.Time, burstLimit)
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	go func() {
+		ticker := time.NewTicker(rateLimit)
+		defer ticker.Stop()
+		for t := range ticker.C {
+			select {
+			case throttle <- t:
+			case <-ctx.Done():
+				return // Exit goroutine when surrounding function returns
+			}
 		}
-		// Get IP info and upload to Postgres if result is not nil
-		if connection != nil {
-			// Get IP data
-			json, err := utils.GetIpInfo(connection.IPAddress)
-			// Check for error
+	}()
+
+	for {
+		<-throttle // Rate limit our client calls
+		go func() {
+			// Fetch oldest records from Redis, get IP info and upload to Postgres
+			connection, err := database.PopRecord()
 			if err != nil {
 				log.Println(err)
-			} else {
-				err = connection.SetConnectionDetails(*json)
+			}
+			// Get IP info and upload to Postgres if result is not nil
+			if connection != nil {
+				// Get IP data
+				json, err := utils.GetIpInfo(connection.IPAddress)
 				// Check for error
 				if err != nil {
 					log.Println(err)
 				} else {
-					// Insert to Postgres
-					if err := database.InsertConnection(*connection); err != nil {
+					err = connection.SetConnectionDetails(*json)
+					// Check for error
+					if err != nil {
 						log.Println(err)
+					} else {
+						// Insert to Postgres
+						if err := database.InsertConnection(*connection); err != nil {
+							log.Println(err)
+						}
+						log.Println(connection)
 					}
 				}
 			}
-		}
-		// Wait for 1 seconds between API calls
-		time.Sleep(time.Second)
+		}()
 	}
 }
