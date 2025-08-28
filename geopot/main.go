@@ -136,7 +136,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 						if err := database.InsertConnection(*connection); err != nil {
 							log.Println(err)
 						}
-						log.Println(connection)
+						// log.Println(connection)
 					}
 				}
 			}
