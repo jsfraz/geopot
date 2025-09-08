@@ -126,6 +126,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 				// Check for error
 				if err != nil {
 					log.Println(err)
+					// TODO push back to Valkey (to end of the list)
 				} else {
 					err = connection.SetConnectionDetails(*json)
 					// Check for error
