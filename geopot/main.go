@@ -136,8 +136,15 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 						// Insert to Postgres
 						if err := database.InsertConnection(*connection); err != nil {
 							log.Println(err)
+						} else {
+							// Po úspěšném vložení do databáze odešlete kompletní data přes WebSocket
+							jsonBytes, err := connection.MarshalBinary()
+							if err != nil {
+								log.Printf("Error marshaling connection data: %v", err)
+							} else {
+								utils.WebSocketManagerSingleton.BroadcastConnection(jsonBytes)
+							}
 						}
-						// log.Println(connection)
 					}
 				}
 			}

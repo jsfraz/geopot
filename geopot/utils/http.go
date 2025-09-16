@@ -6,18 +6,31 @@ import (
 	"net/http"
 )
 
-// Serve files from the specified directory on the given port
-//
-// @param directory Directory to serve files from
-// @param port Port to serve files on
-func ServeFiles(directory string, port int) {
-	fileServer := http.FileServer(http.Dir(directory))
-	http.Handle("/", fileServer)
+// WebSocketManagerSingleton je instance WebSocket manageru sdílená v aplikaci
+var WebSocketManagerSingleton = NewWebSocketManager()
 
-	address := "0.0.0.0:" + fmt.Sprintf("%d", port)
-	log.Printf("HTTP file server is running on %s, serving files from %s\n", address, directory)
+// ServeFiles slouží k obsluze statických souborů a nastavení WebSocket endpointu
+func ServeFiles(dir string, port int) {
+	// Vytvoření mux pro HTTP routování
+	mux := http.NewServeMux()
 
-	err := http.ListenAndServe(address, nil)
+	// Statické soubory
+	fs := http.FileServer(http.Dir(dir))
+	mux.Handle("/", fs)
+
+	// WebSocket endpoint
+	mux.HandleFunc("/ws", WebSocketManagerSingleton.HandleWebSocket)
+
+	// API endpoints (později můžete přidat REST API)
+	// mux.HandleFunc("/api/connections", handleConnections)
+
+	// Spuštění WebSocket managera na pozadí
+	go WebSocketManagerSingleton.Start()
+
+	// Spuštění HTTP serveru
+	address := fmt.Sprintf(":%d", port)
+	log.Printf("Starting HTTP server at http://0.0.0.0%s", address)
+	err := http.ListenAndServe(address, mux)
 	if err != nil {
 		log.Fatalf("Failed to start HTTP server: %v", err)
 	}
