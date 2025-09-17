@@ -29,7 +29,7 @@ func ServeFiles(dir string, port int) {
 
 	// Spuštění HTTP serveru
 	address := fmt.Sprintf(":%d", port)
-	log.Printf("Starting HTTP server at http://0.0.0.0%s", address)
+	log.Printf("Starting HTTP server at 0.0.0.0%s", address)
 	err := http.ListenAndServe(address, mux)
 	if err != nil {
 		log.Fatalf("Failed to start HTTP server: %v", err)
