@@ -18,7 +18,13 @@ The main idea is that you don't use default SSH port to connect to your remote s
 
 ## Example usage
 
-### Example `docker-compose.yml`
+### Example `docker-compose.yml` (see [`docker-compose.example.yml`](docker-compose.example.yml))
+
+Don't forget to generate `private_key.pem` first using following command:
+
+```bash
+openssl genrsa -out private_key.pem 4096
+```
 
 ```yaml
 name: geopot
@@ -65,6 +71,7 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - ./private_key.pem:/app/private_key.pem
+      - /etc/localtime:/etc/localtime:ro
     restart: always
 
 networks:
@@ -76,7 +83,11 @@ volumes:
   valkey_data:
 ```
 
-### Example `.env` environmental variables
+And build with `sudo docker compose up -d`!
+
+For deploying behind a reverse proxy see [nginx configuration](geopot.conf).
+
+### Example `.env` environmental variables  (see [`.env.example`](.env.example))
 
 | Variable          | Description           |
 |-------------------|-----------------------|
