@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"jsfraz/geopot/database"
+	"jsfraz/geopot/handlers"
 	"jsfraz/geopot/models"
 	"jsfraz/geopot/utils"
 
@@ -25,6 +26,10 @@ func main() {
 	database.SetupPostgres()
 	database.SetupValkey()
 
+	// Get self IP info
+	getSelfIpInfo()
+	time.Sleep(time.Second)
+
 	// Server config with password callback denying everything
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
@@ -42,6 +47,15 @@ func main() {
 				// Insert to Postgres
 				if err := database.InsertConnection(*connection); err != nil {
 					log.Println(err)
+				} else {
+					// After successful upload, broadcast to WebSocket clients
+					wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
+					wsJsonBytes, err := wsMessage.MarshalBinary()
+					if err != nil {
+						log.Printf("Error marshaling connection data: %v", err)
+					} else {
+						handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
+					}
 				}
 			} else {
 				// Push to Valkey (public)
@@ -72,7 +86,7 @@ func main() {
 	go burstRateLimitCall(context.Background(), 60)
 
 	// HTTP file server goroutine
-	go utils.ServeFiles("./static", 8080)
+	go handlers.ServeHttp("./static", 8080)
 
 	for {
 		conn, err := listener.Accept()
@@ -133,7 +147,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 			}
 
 			// Get IP data
-			json, err := utils.GetIpInfo(connection.IPAddress)
+			json, err := utils.GetIpInfo(&connection.IPAddress)
 			// Check for error
 			if err != nil {
 				log.Println(err)
@@ -151,16 +165,37 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 					if err := database.InsertConnection(*connection); err != nil {
 						log.Println(err)
 					} else {
-						// Po úspěšném vložení do databáze odešlete kompletní data přes WebSocket
-						jsonBytes, err := connection.MarshalBinary()
+						// After successful upload, broadcast to WebSocket clients
+						wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
+						wsJsonBytes, err := wsMessage.MarshalBinary()
 						if err != nil {
 							log.Printf("Error marshaling connection data: %v", err)
 						} else {
-							utils.WebSocketManagerSingleton.BroadcastConnection(jsonBytes)
+							handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
 						}
 					}
 				}
 			}
 		}()
+	}
+}
+
+// Get server public IP info and push to Valkey
+func getSelfIpInfo() {
+	json, err := utils.GetIpInfo(nil)
+	if err != nil {
+		log.Fatalf("Failed to get server public IP info: %v", err)
+	}
+	// Unmarshal to struct
+	connection, err := models.ConnectionFromJson(*json)
+	if err != nil {
+		log.Fatalf("Failed to unmarshal server public IP: %v", err)
+	}
+	// Print info
+	log.Printf("Server public IP info: %+v\n", connection.IPAddress)
+
+	// Push to Valkey
+	if err := database.PushSelfRecord(*connection); err != nil {
+		log.Fatalf("Failed to push self record to Valkey: %v", err)
 	}
 }

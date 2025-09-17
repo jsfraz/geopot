@@ -1,6 +1,27 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import Globe from 'globe.gl';
+import { useWebSocket } from '@vueuse/core'
+
+const { status, data, close } = useWebSocket('ws://localhost:8080/ws',
+  {
+    autoReconnect: true,
+    onConnected(_) {
+      console.log('WebSocket connected');
+    },
+    /*
+    onDisconnected(_, event: CloseEvent) {
+      console.log('WebSocket disconnected:', event.reason);
+    },
+    */
+    onError(_, event: Event) {
+      console.error('WebSocket error:', event);
+    },
+    onMessage: (_, event: MessageEvent) => {
+      // console.log('WebSocket message received:', event.data);
+    },
+  }
+);
 
 const globeContainer = ref<HTMLElement | null>(null);
 let globeInstance: any = null;

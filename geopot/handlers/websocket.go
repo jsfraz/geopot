@@ -1,12 +1,17 @@
-package utils
+package handlers
 
 import (
+	"jsfraz/geopot/database"
+	"jsfraz/geopot/models"
 	"log"
 	"net/http"
 	"sync"
 
 	"github.com/gorilla/websocket"
 )
+
+// WebSocketManagerSingleton je instance WebSocket manageru sdílená v aplikaci
+var WebSocketManagerSingleton = NewWebSocketManager()
 
 // WebSocketManager manages WebSocket connections and sends messages to clients
 type WebSocketManager struct {
@@ -75,6 +80,30 @@ func (manager *WebSocketManager) HandleWebSocket(w http.ResponseWriter, r *http.
 	}
 
 	manager.register <- conn
+
+	// Get server IP info
+	info, err := database.GetSelfRecord()
+	if err != nil {
+		log.Printf("Error getting server info: %v", err)
+		conn.Close()
+		manager.unregister <- conn
+		return
+	}
+	initialMessage := models.NewWSMessage(models.WSMessageTypeServeInfo, *info)
+	initialMessageBytes, err := initialMessage.MarshalBinary()
+	if err != nil {
+		log.Printf("Error marshaling initial message: %v", err)
+		conn.Close()
+		manager.unregister <- conn
+		return
+	}
+	// Send initial message with server IP info
+	if err := conn.WriteMessage(websocket.TextMessage, initialMessageBytes); err != nil {
+		log.Printf("Error sending initial message: %v", err)
+		conn.Close()
+		manager.unregister <- conn
+		return
+	}
 }
 
 // BroadcastConnection broadcasts information about a new connection to all clients
