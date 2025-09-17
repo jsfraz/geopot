@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import Globe, { type GlobeInstance } from 'globe.gl';
-import { useWebSocket } from '@vueuse/core'
+import { useWebSocket } from '@vueuse/core';
+import { VueSpinnerPacman } from 'vue3-spinners';
 
 // WebSocket message type
 interface WSMessage {
@@ -30,7 +31,9 @@ interface Connection {
   timestamp: string; // ISO 8601 format
 }
 
+const spinnerColor = ref('#20c20e');
 // Globe setup
+const isGlobeLoaded = ref(false);
 const globeContainer = ref<HTMLElement | null>(null);
 let globe: GlobeInstance | null = null;
 // https://www.svgviewer.dev/s/365077/server
@@ -155,7 +158,7 @@ onMounted(() => {
                 g = parseInt(match[2]);
                 b = parseInt(match[3]);
               }
-            } 
+            }
             // For hex format
             else if (typeof ring.color === 'string' && ring.color.startsWith('#')) {
               const hex = ring.color.substring(1);
@@ -163,20 +166,22 @@ onMounted(() => {
               g = parseInt(hex.substring(2, 4), 16);
               b = parseInt(hex.substring(4, 6), 16);
             }
-            
+
             // Return RGBA color with fading alpha
             return (t: number) => `rgba(${r},${g},${b},${1 - t})`;
           }
-          
+
           // Or use default color
           return (t: number) => `rgba(255,100,50,${1 - t})`;
         })
         .ringMaxRadius(RINGS_MAX_R)
         .ringPropagationSpeed(RING_PROPAGATION_SPEED)
-        .ringRepeatPeriod(FLIGHT_TIME * ARC_REL_LEN / NUM_RINGS);
-
-      // Create marker on globe
-      setServerLocationMarker();
+        .ringRepeatPeriod(FLIGHT_TIME * ARC_REL_LEN / NUM_RINGS)
+        .onGlobeReady(() => {
+          // Create marker on globe
+          setServerLocationMarker();
+          isGlobeLoaded.value = true;
+        });
     }
   });
 
@@ -266,7 +271,6 @@ function getCountryColorFromCoordinates(lat: number, lng: number, countryName?: 
   // Use the same algorithm as in hexPolygonColor
   // If we have a country name, use it; otherwise, use the coordinates
   const name = countryName || `${lat},${lng}`;
-  
   // Convert name to number (using hashing)
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
@@ -288,6 +292,11 @@ function getCountryColorFromCoordinates(lat: number, lng: number, countryName?: 
 
 <template>
   <div class="globe-wrapper">
+    <Transition name="fade">
+      <div v-if="!isGlobeLoaded" class="loading-container">
+        <VueSpinnerPacman size="20" :color="spinnerColor" />
+      </div>
+    </Transition>
     <div ref="globeContainer" class="globe-container"></div>
   </div>
 </template>
@@ -300,6 +309,29 @@ function getCountryColorFromCoordinates(lat: number, lng: number, countryName?: 
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.loading-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  background-color: rgba(0, 0, 0, 0.5);
 }
 
 .globe-container {
