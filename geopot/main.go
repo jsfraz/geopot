@@ -53,7 +53,7 @@ func main() {
 				*/
 
 				// Insert to Postgres
-				if err := database.InsertConnection(*connection); err != nil {
+				if err := database.InsertConnection(connection); err != nil {
 					log.Println(err)
 				} else {
 					// After successful upload, broadcast to WebSocket clients
@@ -170,7 +170,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 					log.Println(err)
 				} else {
 					// Insert to Postgres
-					if err := database.InsertConnection(*connection); err != nil {
+					if err := database.InsertConnection(connection); err != nil {
 						log.Println(err)
 					} else {
 						// After successful upload, broadcast to WebSocket clients
