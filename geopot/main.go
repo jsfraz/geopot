@@ -45,10 +45,12 @@ func main() {
 			// Upload to Valkey or Postgres (check if address is public)
 			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
 			if !utils.IsPublicIP(connection.IPAddress) {
-				// Generování náhodných souřadnic
-				connection.IPVersion = 4
-				connection.Longitude = randomCoordinate(-180.0, 180.0) // zeměpisná délka
-				connection.Latitude = randomCoordinate(-90.0, 90.0)    // zeměpisná šířka
+				/*
+					// Generate random coordinates (for localhost testing purposes)
+					connection.IPVersion = 4
+					connection.Longitude = randomCoordinate(-180.0, 180.0) // zeměpisná délka
+					connection.Latitude = randomCoordinate(-90.0, 90.0)    // zeměpisná šířka
+				*/
 
 				// Insert to Postgres
 				if err := database.InsertConnection(*connection); err != nil {
