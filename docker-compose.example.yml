@@ -22,32 +22,32 @@ services:
       - valkey_data:/data
     restart: always
 
-  # geopot:
-  #  image: jsfraz/geopot
-  #  container_name: geopot
-  #  depends_on:
-  #    - geopot-timescaledb
-  #    - geopot-valkey
-  #  environment:
-  #    - POSTGRES_USER=geopot
-  #    - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-  #    - POSTGRES_SERVER=geopot-timescaledb
-  #    - POSTGRES_PORT=5432
-  #    - POSTGRES_DB=geopot
-  #    - VALKEY_PASSWORD=${VALKEY_PASSWORD}
-  #    - VALKEY_SERVER=geopot-valkey
-  #    - VALKEY_PORT=6379
-  #  ports:
-  #    - "${PUBLIC_IP}:22:2222"
-  #  volumes:
-  #    - geopot:/app
-  #  restart: always
+  geopot:
+    image: ghcr.io/jsfraz/geopot:latest
+    container_name: geopot
+    depends_on:
+      - geopot-timescaledb
+      - geopot-valkey
+    environment:
+      - POSTGRES_USER=geopot
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SERVER=geopot-timescaledb
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=geopot
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
+      - VALKEY_SERVER=geopot-valkey
+      - VALKEY_PORT=6379
+    ports:
+      - "22:2222"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./private_key.pem:/app/private_key.pem
+    restart: always
 
 networks:
   geopot:
     name: geopot
 
 volumes:
-  geopot-ssh-server:
   timescaledb_data:
   valkey_data:

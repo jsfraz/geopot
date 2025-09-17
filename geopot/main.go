@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"math/rand/v2"
 	"net"
 	"time"
 
@@ -44,6 +45,11 @@ func main() {
 			// Upload to Valkey or Postgres (check if address is public)
 			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
 			if !utils.IsPublicIP(connection.IPAddress) {
+				// Generování náhodných souřadnic
+				connection.IPVersion = 4
+				connection.Longitude = randomCoordinate(-180.0, 180.0) // zeměpisná délka
+				connection.Latitude = randomCoordinate(-90.0, 90.0)    // zeměpisná šířka
+
 				// Insert to Postgres
 				if err := database.InsertConnection(*connection); err != nil {
 					log.Println(err)
@@ -198,4 +204,9 @@ func getSelfIpInfo() {
 	if err := database.PushSelfRecord(*connection); err != nil {
 		log.Fatalf("Failed to push self record to Valkey: %v", err)
 	}
+}
+
+// Generating random coordinates for testing purposes
+func randomCoordinate(min, max float64) float64 {
+	return min + (max-min)*(min+rand.Float64()*(max-min))
 }
