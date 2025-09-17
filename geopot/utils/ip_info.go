@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 )
 
@@ -31,4 +32,13 @@ func GetIpInfo(ipAddress string) (*string, error) {
 
 	stringResult := string(body)
 	return &stringResult, nil
+}
+
+// Check if IP address is public
+//
+//	@param ipAddress
+//	@return bool
+func IsPublicIP(ipAddress string) bool {
+	ip := net.ParseIP(ipAddress)
+	return ip != nil && !ip.IsPrivate() && !ip.IsLoopback() && !ip.IsUnspecified()
 }

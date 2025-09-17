@@ -36,12 +36,20 @@ func main() {
 				log.Println(err)
 				return nil, ssh.ErrNoAuth
 			}
-			// Upload to Redis
+			// Upload to Valkey or Postgres (check if address is public)
 			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
-			err = database.PushRecord(*connection)
-			if err != nil {
-				log.Println(err)
+			if !utils.IsPublicIP(connection.IPAddress) {
+				// Insert to Postgres
+				if err := database.InsertConnection(*connection); err != nil {
+					log.Println(err)
+				}
+			} else {
+				// Push to Valkey (public)
+				if err := database.PushRecord(*connection); err != nil {
+					log.Println(err)
+				}
 			}
+
 			return nil, ssh.ErrNoAuth
 		},
 	}
@@ -119,31 +127,36 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 			if err != nil {
 				log.Println(err)
 			}
-			// Get IP info and upload to Postgres if result is not nil
-			if connection != nil {
-				// Get IP data
-				json, err := utils.GetIpInfo(connection.IPAddress)
+			// Return if result is nil
+			if connection == nil {
+				return
+			}
+
+			// Get IP data
+			json, err := utils.GetIpInfo(connection.IPAddress)
+			// Check for error
+			if err != nil {
+				log.Println(err)
+				// Push back to Valkey (to end of the list)
+				if err := database.PushRecord(*connection); err != nil {
+					log.Println(err)
+				}
+			} else {
+				err = connection.SetConnectionDetails(*json)
 				// Check for error
 				if err != nil {
 					log.Println(err)
-					// TODO push back to Valkey (to end of the list)
 				} else {
-					err = connection.SetConnectionDetails(*json)
-					// Check for error
-					if err != nil {
+					// Insert to Postgres
+					if err := database.InsertConnection(*connection); err != nil {
 						log.Println(err)
 					} else {
-						// Insert to Postgres
-						if err := database.InsertConnection(*connection); err != nil {
-							log.Println(err)
+						// Po úspěšném vložení do databáze odešlete kompletní data přes WebSocket
+						jsonBytes, err := connection.MarshalBinary()
+						if err != nil {
+							log.Printf("Error marshaling connection data: %v", err)
 						} else {
-							// Po úspěšném vložení do databáze odešlete kompletní data přes WebSocket
-							jsonBytes, err := connection.MarshalBinary()
-							if err != nil {
-								log.Printf("Error marshaling connection data: %v", err)
-							} else {
-								utils.WebSocketManagerSingleton.BroadcastConnection(jsonBytes)
-							}
+							utils.WebSocketManagerSingleton.BroadcastConnection(jsonBytes)
 						}
 					}
 				}
