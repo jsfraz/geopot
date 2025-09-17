@@ -1,6 +1,8 @@
-# lucian
+# geopot
 
-L.U.C.I.A.N (Location-based Unauthorized Connection Investigation and Analysis Network) as the (very cool) name suggests is intended for monitoring SSH login attempts and geolocating remote hosts who failed to login and gathering used credentials.
+Monitoring SSH login attempts and geolocating remote hosts who failed to login and gathering used credentials.
+
+![Frontend screenshot](frontend.png)
 
 ## How it works
 
@@ -14,18 +16,91 @@ The main idea is that you don't use default SSH port to connect to your remote s
 | 35083 | 4          | 180.101.88.252 | 31.311365 | 120.617691 | China        | CN           | +08:00     | 215003   | Suzhou    | Jiangsu     | false    | Asia      | AS             | root | egk       | 2024-02-28 14:30:53.744 +0100 |
 | 35082 | 4          | 180.101.88.252 | 31.311365 | 120.617691 | China        | CN           | +08:00     | 215003   | Suzhou    | Jiangsu     | false    | Asia      | AS             | root | 1qaz2wsx@ | 2024-02-28 14:30:53.397 +0100 |
 
-## Deploy
+## Example usage
 
-Change database passwords and public IP address in `.env` file and run `sudo ./compose.sh` to build the image and compose the project.
+### Example `docker-compose.yml`
 
-.env example:
+```yaml
+name: geopot
 
-```env
-POSTGRES_PASSWORD=hard_password
-VALKEY_PASSWORD=hard_password
-PUBLIC_IP=127.0.0.1
+services:
+
+  geopot-timescaledb:
+    image: timescale/timescaledb:latest-pg17
+    container_name: geopot-timescaledb
+    environment:
+      - POSTGRES_DB=geopot
+      - POSTGRES_USER=geopot
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGDATA=/pgdata
+    volumes:
+      - timescaledb_data:/pgdata
+    restart: always
+
+  geopot-valkey:
+    image: valkey/valkey:latest
+    container_name: geopot-valkey
+    command: /bin/sh -c "redis-server --requirepass ${VALKEY_PASSWORD}"
+    volumes:
+      - valkey_data:/data
+    restart: always
+
+  geopot:
+    image: ghcr.io/jsfraz/geopot:latest
+    container_name: geopot
+    depends_on:
+      - geopot-timescaledb
+      - geopot-valkey
+    environment:
+      - POSTGRES_USER=geopot
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SERVER=geopot-timescaledb
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=geopot
+      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
+      - VALKEY_SERVER=geopot-valkey
+      - VALKEY_PORT=6379
+    ports:
+      - "22:2222"
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - ./private_key.pem:/app/private_key.pem
+    restart: always
+
+networks:
+  geopot:
+    name: geopot
+
+volumes:
+  timescaledb_data:
+  valkey_data:
 ```
 
-## Future plans
+### Example `.env` environmental variables
 
-Frontend coming soon! (soon is relative)
+| Variable          | Description           |
+|-------------------|-----------------------|
+| POSTGRES_USER     | PostgreSQL user       |
+| POSTGRES_PASSWORD | PostgreSQL password   |
+| POSTGRES_SERVER   | PostgreSQL server     |
+| POSTGRES_PORT     | PostgreSQL port       |
+| POSTGRES_DB       | PostgreSQL database   |
+| VALKEY_PASSWORD   | Valkey password       |
+| VALKEY_SERVER     | Valkey server         |
+| VALKEY_PORT       | Valkey port           |
+
+### TODO Example nginx configuration
+
+## Development
+
+### Local build
+
+```bash
+sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+```
+
+### Testing `localhost:2222`
+
+```bash
+./test.sh number_of_attempts
+```

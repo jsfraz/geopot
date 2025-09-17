@@ -1,0 +1,39 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "go: debug",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/geopot",
+            "envFile": "${workspaceFolder}/.env.dev",
+        },
+        {
+            "type": "firefox",
+            "request": "launch",
+            "preLaunchTask": "vite-dev",
+            "name": "vuejs: firefox",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend/src",
+            "pathMappings": [
+                {
+                    "url": "webpack:///src/",
+                    "path": "${webRoot}/"
+                }
+            ]
+        },
+        {
+            "type": "chrome",
+            "request": "launch",
+            "preLaunchTask": "vite-dev",
+            "name": "vuejs: chrome",
+            "url": "http://localhost:5173",
+            "webRoot": "${workspaceFolder}/frontend/src",
+            "sourceMapPathOverrides": {
+                "/@fs/*": "${webRoot}/*",
+                "/*": "${webRoot}/*"
+            }
+        }
+    ]
+}

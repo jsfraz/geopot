@@ -7,25 +7,25 @@ import (
 
 // SSH connection
 type Connection struct {
-	ID uint64 `json:"id" gorm:"primarykey"`
+	ID uint64 `json:"id" gorm:"primaryKey;uniqueIndex:idx_id_timestamp,priority:1"`
 
 	IPVersion     int     `json:"ipVersion"`
-	IPAddress     string  `json:"ipAddress"`
+	IPAddress     string  `json:"ipAddress" gorm:"index:idx_ip_address"`
 	Latitude      float64 `json:"latitude"`
 	Longitude     float64 `json:"longitude"`
 	CountryName   string  `json:"countryName"`
-	CountryCode   string  `json:"countryCode"`
+	CountryCode   string  `json:"countryCode" gorm:"index:idx_country_code"`
 	TimeZone      string  `json:"timeZone"`
 	ZipCode       string  `json:"zipCode"`
 	CityName      string  `json:"cityName"`
 	RegionName    string  `json:"regionName"`
-	IsProxy       bool    `json:"isProxy"`
+	IsProxy       bool    `json:"isProxy" gorm:"index:idx_is_proxy"`
 	Continent     string  `json:"continent"`
-	ContinentCode string  `json:"continentCode"`
+	ContinentCode string  `json:"continentCode" gorm:"index:idx_continent_code"`
 
-	User      string    `json:"user"`
+	User      string    `json:"user" gorm:"index:idx_user"`
 	Password  string    `json:"password"`
-	Timestamp time.Time `json:"timestamp"`
+	Timestamp time.Time `json:"timestamp" gorm:"type:timestamptz;index:idx_timestamp;uniqueIndex:idx_id_timestamp,priority:2;not null"`
 }
 
 // Create new SSH connection info.
@@ -70,7 +70,7 @@ func (c *Connection) SetConnectionDetails(jsonData string) error {
 	return nil
 }
 
-// Create Connestion instance from JSON.
+// Create Connection instance from JSON.
 //
 //	@param jsonData
 //	@return *Connection

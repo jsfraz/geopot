@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-	"jsfraz/lucian-ssh-server/models"
-	"jsfraz/lucian-ssh-server/utils"
+	"jsfraz/geopot/models"
+	"jsfraz/geopot/utils"
 	"log"
 	"os"
 
@@ -47,6 +47,41 @@ func PopRecord() (*models.Connection, error) {
 	// Get result
 	client := utils.GetSingleton().Valkey
 	result, _ := client.Do(context.Background(), client.B().Lpop().Key("list").Build()).AsBytes()
+	// Return nil when no result is fetched
+	if len(result) == 0 {
+		return nil, nil
+	}
+	// Return *models.Connection instance
+	connection, err := models.ConnectionFromJson(string(result))
+	if err != nil {
+		return nil, err
+	}
+	return connection, nil
+}
+
+// Add self connection record (server public IP info).
+//
+//	@param connection
+//	@return error
+func PushSelfRecord(connection models.Connection) error {
+	// Connection to JSON
+	c, err := connection.MarshalBinary()
+	if err != nil {
+		return err
+	}
+	// Add to list
+	client := utils.GetSingleton().Valkey
+	return client.Do(context.Background(), client.B().Set().Key("self").Value(string(c)).Build()).Error()
+}
+
+// Get self connection record (server public IP info).
+//
+//	@return *models.Connection
+//	@return error
+func GetSelfRecord() (*models.Connection, error) {
+	// Get result
+	client := utils.GetSingleton().Valkey
+	result, _ := client.Do(context.Background(), client.B().Get().Key("self").Build()).AsBytes()
 	// Return nil when no result is fetched
 	if len(result) == 0 {
 		return nil, nil
