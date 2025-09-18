@@ -7,8 +7,10 @@ import (
 
 // Singleton for database clients.
 type Singleton struct {
-	Postgres *gorm.DB
-	Valkey   valkey.Client
+	Postgres         gorm.DB
+	Valkey           valkey.Client
+	WebSocketManager *WebSocketManager
+	Config           Config
 }
 
 var instance *Singleton

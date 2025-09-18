@@ -5,11 +5,12 @@ import (
 	"log"
 	"math/rand/v2"
 	"net"
+	"net/http"
 	"time"
 
 	"jsfraz/geopot/database"
-	"jsfraz/geopot/handlers"
 	"jsfraz/geopot/models"
+	"jsfraz/geopot/routes"
 	"jsfraz/geopot/utils"
 
 	"golang.org/x/crypto/ssh"
@@ -22,17 +23,40 @@ func main() {
 	log.SetPrefix("geopot: ")
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmicroseconds)
 
+	// Load config
+	utils.LoadConfig()
+
 	// Setup databases
-	time.Sleep(time.Second * 5)
 	database.SetupPostgres()
 	database.SetupValkey()
+
+	// Initialize WebSocket manager
+	utils.GetSingleton().WebSocketManager = utils.NewWebSocketManager()
+	go utils.GetSingleton().WebSocketManager.Start()
+
+	// Get router or panic
+	router, err := routes.NewRouter()
+	if err != nil {
+		log.Panicln(err)
+	}
+	// Start HTTP server
+	srv := &http.Server{
+		Addr:    "0.0.0.0:8080",
+		Handler: router,
+	}
+	// Start server in separated goroutine, panic on error
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Panicln(err)
+		}
+	}()
 
 	// Get self IP info
 	getSelfIpInfo()
 	time.Sleep(time.Second)
 
-	// Server config with password callback denying everything
-	config := &ssh.ServerConfig{
+	// Server sshConfig with password callback denying everything
+	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			timestamp := time.Now()
 			log.Printf("Unsuccessful login attempt from %s by user '%s' with password '%s'.", conn.RemoteAddr(), conn.User(), password)
@@ -62,7 +86,7 @@ func main() {
 					if err != nil {
 						log.Printf("Error marshaling connection data: %v", err)
 					} else {
-						handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
+						utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 					}
 				}
 			} else {
@@ -81,7 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate or load host key: %v", err)
 	}
-	config.AddHostKey(privateKey)
+	sshConfig.AddHostKey(privateKey)
 
 	// Listener
 	listener, err := net.Listen("tcp", "0.0.0.0:2222")
@@ -93,16 +117,13 @@ func main() {
 	// API call goroutine
 	go burstRateLimitCall(context.Background(), 60)
 
-	// HTTP file server goroutine
-	go handlers.ServeHttp("./static", 8080)
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatalf("Failed to accept incoming connection: %v", err)
 			continue
 		}
-		go handleConnection(conn, config)
+		go handleConnection(conn, sshConfig)
 	}
 }
 
@@ -179,7 +200,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 						if err != nil {
 							log.Printf("Error marshaling connection data: %v", err)
 						} else {
-							handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
+							utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 						}
 					}
 				}
@@ -187,6 +208,8 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 		}()
 	}
 }
+
+// TODO refactoring
 
 // Get server public IP info and push to Valkey
 func getSelfIpInfo() {

@@ -1,16 +1,27 @@
-<!-- TODO Make standalone globe component -->
-
 <script setup lang="ts">
 import { useWebSocket } from '@vueuse/core';
 import type { WSMessage } from './types/ws_message';
 import Globe from './components/Globe.vue';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import StatCard from './components/StatCard.vue';
 
 // WebSocket URL
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 // Globe component
 const globe = ref<InstanceType<typeof Globe> | null>(null);
+
+onMounted(() => {
+  /*
+  new UserApi().createUser({}).subscribe({
+    next: (response) => {
+      console.log('User created:', response);
+    },
+    error: (error) => {
+      console.error('Error creating user:', error);
+    },
+  });
+  */
+});
 
 // WebSocket connection
 useWebSocket(websocketUrl,

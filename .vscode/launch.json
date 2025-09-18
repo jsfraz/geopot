@@ -34,6 +34,13 @@
                 "/@fs/*": "${webRoot}/*",
                 "/*": "${webRoot}/*"
             }
+        },
+        {
+            "type": "node-terminal",
+            "request": "launch",
+            "name": "Generate OpenAPI client",
+            "command": "npm run openapi",
+            "cwd": "${workspaceFolder}/frontend"
         }
     ]
 }
