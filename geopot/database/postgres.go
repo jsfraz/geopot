@@ -50,9 +50,9 @@ func SetupPostgres() {
 //
 //	@param connection
 //	@return error
-func InsertConnection(connection models.Connection) error {
+func InsertConnection(connection *models.Connection) error {
 	// Ensure timestamp is in UTC
 	connection.Timestamp = connection.Timestamp.UTC()
 	// Use Create to add the record to the hypertable
-	return utils.GetSingleton().Postgres.Create(&connection).Error
+	return utils.GetSingleton().Postgres.Create(connection).Error
 }
