@@ -5,6 +5,7 @@ import { useWebSocket } from '@vueuse/core';
 import type { WSMessage } from './types/ws_message';
 import Globe from './components/Globe.vue';
 import { ref } from 'vue';
+import StatCard from './components/StatCard.vue';
 
 // WebSocket URL
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
@@ -39,5 +40,22 @@ useWebSocket(websocketUrl,
 </script>
 
 <template>
-  <Globe ref="globe" :autoRotateDefault="false"/>
+  <!-- Stat cards -->
+  <div class="w-full h-1/5 flex">
+    <div class="flex-1 py-4 px-2">
+      <StatCard :title="'Total connections'" />
+    </div>
+    <div class="flex-1 py-4 px-2">
+      <StatCard />
+    </div>
+    <div class="flex-1 py-4 px-2">
+      <StatCard />
+    </div>
+    <div class="flex-1 py-4 px-2">
+      <StatCard />
+    </div>
+    <div class="flex-1 py-4 px-2">
+      <StatCard />
+    </div>
+  </div>
 </template>

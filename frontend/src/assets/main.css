@@ -1,8 +1,22 @@
 @import './base.css';
 @import "tailwindcss";
 
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+@theme {
+  /*  */
+  --color-hacker: #20c20e;
+  --color-hackerbg: #062703;
+
+  --color-background: #121212;
+}
+
+@font-face {
+  font-family: 'FiraCodeNerdFontMono-Regular';
+  src: url('/fonts/FiraCodeNerdFontMono-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap; /* Helps with loading performance */
+}
+
+body {
+  font-family: 'FiraCodeNerdFontMono-Regular', sans-serif;
 }

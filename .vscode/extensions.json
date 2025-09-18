@@ -5,6 +5,7 @@
     "wakatime.vscode-wakatime",
     "eamodio.gitlens",
     "Vue.volar",
-    "firefox-devtools.vscode-firefox-debug"
+    "firefox-devtools.vscode-firefox-debug",
+    "bradlc.vscode-tailwindcss"
   ]
 }
