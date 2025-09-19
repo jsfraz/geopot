@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/kelseyhightower/envconfig"
+	"gorm.io/gorm/logger"
 )
 
 type Config struct {
@@ -27,11 +28,21 @@ type Config struct {
 
 // Loads config from environmental values.
 func LoadConfig() {
-	// Load config
 	var config Config
 	err := envconfig.Process("", &config)
 	if err != nil {
 		log.Fatalln(fmt.Errorf("failed to load config: %v", err))
 	}
 	GetSingleton().Config = config
+}
+
+// Returns the Gorm log level according to the environment variable
+//
+//	@receiver c
+//	@return logger.LogLevel
+func (c *Config) GetGormLogLevel() logger.LogLevel {
+	if c.GinMode != "debug" {
+		return logger.Error
+	}
+	return logger.Info
 }

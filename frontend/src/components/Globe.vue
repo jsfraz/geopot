@@ -162,7 +162,7 @@ function wsMessage(msg: WSMessage) {
     // Message type handling
     switch (msg.type) {
         case 'attacker':
-            if (serverMarkerData && globe && msg.data.ipVersion != 0) {
+            if (serverMarkerData && globe && msg.data.latitude != 0 && msg.data.longitude != 0) {
                 // Get country color based on coordinates
                 const key = `${msg.data.latitude.toFixed(1)},${msg.data.longitude.toFixed(1)}`;
                 if (!countryCoordinatesToColor.has(key) && msg.data.countryName) {
@@ -326,7 +326,7 @@ function startStopRotation() {
     <div class="border-1 border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden">
         <Transition name="fade">
             <div v-if="!isGlobeLoaded"
-                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/50">
+                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">
                 <VueSpinnerPacman size="20" :color="spinnerColor" />
             </div>
         </Transition>

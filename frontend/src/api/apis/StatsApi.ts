@@ -14,9 +14,10 @@
 import type { Observable } from 'rxjs';
 import type { AjaxResponse } from 'rxjs/ajax';
 import { BaseAPI } from '../runtime';
-import type { OperationOpts, HttpHeaders } from '../runtime';
+import type { OperationOpts } from '../runtime';
 import type {
-    ModelsValue,
+    ModelsNumberValue,
+    ModelsStringsValue,
 } from '../models';
 
 /**
@@ -25,19 +26,67 @@ import type {
 export class StatsApi extends BaseAPI {
 
     /**
+     * Get all unique countries
+     * All unique countries
+     */
+    getAllUniqueCountries(): Observable<ModelsStringsValue>
+    getAllUniqueCountries(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
+    getAllUniqueCountries(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
+        return this.request<ModelsStringsValue>({
+            url: '/api/stats/allUniqueCountries',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get all unique IP addresses
+     * All unique IP addresses
+     */
+    getAllUniqueIPAddresses(): Observable<ModelsStringsValue>
+    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
+    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
+        return this.request<ModelsStringsValue>({
+            url: '/api/stats/allUniqueIps',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
      * Get total connection count
      * Total connection count
      */
-    getTotalConnectionCount(): Observable<ModelsValue>
-    getTotalConnectionCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsValue>>
-    getTotalConnectionCount(opts?: OperationOpts): Observable<ModelsValue | AjaxResponse<ModelsValue>> {
-        const headers: HttpHeaders = {
-        };
-
-        return this.request<ModelsValue>({
+    getTotalConnectionCount(): Observable<ModelsNumberValue>
+    getTotalConnectionCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getTotalConnectionCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
             url: '/api/stats/totalConnections',
             method: 'GET',
-            headers,
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get total unique countries count
+     * Total unique countries count
+     */
+    getTotalUniqueCountryCount(): Observable<ModelsNumberValue>
+    getTotalUniqueCountryCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getTotalUniqueCountryCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/totalUniqueCountries',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get total unique IP count
+     * Total unique IP count
+     */
+    getTotalUniqueIPCount(): Observable<ModelsNumberValue>
+    getTotalUniqueIPCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getTotalUniqueIPCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/totalUniqueIps',
+            method: 'GET',
         }, opts?.responseOpts);
     };
 

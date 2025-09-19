@@ -72,6 +72,7 @@ func main() {
 				// Generate random coordinates (for localhost testing purposes)
 				if utils.GetSingleton().Config.GinMode == "debug" {
 					connection.IPVersion = 4
+					connection.IPAddress = utils.RandomPublicIP()
 					connection.Longitude = utils.RandomCoordinate(-180.0, 180.0)
 					connection.Latitude = utils.RandomCoordinate(-90.0, 90.0)
 				}

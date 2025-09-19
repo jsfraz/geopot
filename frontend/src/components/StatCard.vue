@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ModelsValue } from '@/api';
+import type { ModelsNumberValue, ModelsStringsValue } from '@/api/models';
 import { Observable } from 'rxjs';
 import { ref, onMounted } from 'vue';
 import { VueSpinnerPulse } from 'vue3-spinners';
@@ -7,42 +7,84 @@ import { VueSpinnerPulse } from 'vue3-spinners';
 // Define props with default values
 const props = defineProps({
     spinnerColor: { type: String, default: '#20c20e' },
-    title: { type: String, required: true, default: 'Stat Card' },
-    observable: { type: Observable<ModelsValue>, required: true, default: null },
+    title: { type: String, default: 'Stat Card' },
+    observableNumber: { type: Observable<ModelsNumberValue>, default: null },
+    observableStrings: { type: Observable<ModelsStringsValue>, default: null }
 });
 
 // Expose public methods
 defineExpose({
-    increaseValue,
+    increaseNumberValue,
+    increaseStringsValue
 });
 
-// Loading state and value
+// Loading state and values
 const isLoaded = ref(false);
 const value = ref(0);
+const stringsValue = ref([] as string[]);
 
 onMounted(() => {
-    // Load data from observable
-    if (props.observable) {
-        props.observable.subscribe({
+    // Observable validation
+    if (props.observableNumber && props.observableStrings) {
+        console.error('StatCard "' + props.title + '": Both observableNumber and observableStrings props are set. Please provide only one.');
+        isLoaded.value = true;
+        return;
+    }
+    if (!props.observableNumber && !props.observableStrings) {
+        console.error('StatCard "' + props.title + '": Neither observableNumber nor observableStrings prop is set. Please provide one.');
+        isLoaded.value = true;
+        return;
+    }
+
+    // Load data from observable - result is number
+    if (props.observableNumber) {
+        props.observableNumber.subscribe({
             next: (data) => {
-                console.log('StatCard data received:', data);
+                console.log('StatCard "' + props.title + '" data received:', data);
                 value.value = data.value;
             },
             error: (error) => {
                 // TODO show error state
-                console.error('Error loading StatCard data:', error);
+                console.error('Error loading StatCard "' + props.title + '" data:', error);
                 isLoaded.value = true;
             },
             complete: () => {
                 isLoaded.value = true;
+            }
+        });
+    }
+
+    // Load data from observable - result is array of strings
+    if (props.observableStrings) {
+        props.observableStrings.subscribe({
+            next: (data) => {
+                console.log('StatCard "' + props.title + '" data received:', data);
+                stringsValue.value = data.value;
+                value.value = data.value.length;
             },
+            error: (error) => {
+                // TODO show error state
+                console.error('Error loading StatCard "' + props.title + '" data:', error);
+                isLoaded.value = true;
+            },
+            complete: () => {
+                isLoaded.value = true;
+            }
         });
     }
 });
 
 // Increases value by 1
-function increaseValue() {
+function increaseNumberValue() {
     value.value += 1;
+}
+
+// Increases strings value by adding new string if not exists and increases number value
+function increaseStringsValue(newString: string) {
+   if (!stringsValue.value.includes(newString)) {
+       stringsValue.value.push(newString);
+       increaseNumberValue();
+   }
 }
 </script>
 
@@ -50,7 +92,7 @@ function increaseValue() {
     <div class="relative w-full h-full overflow-hidden">
         <Transition name="fade">
             <div v-if="!isLoaded"
-                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/50">
+                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
@@ -65,7 +107,6 @@ function increaseValue() {
 </template>
 
 <style scoped>
-/* Ponecháváme pouze transition efekt, zbytek řeší Tailwind */
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.3s ease;

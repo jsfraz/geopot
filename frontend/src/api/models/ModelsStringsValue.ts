@@ -13,12 +13,12 @@
 
 /**
  * @export
- * @interface ModelsValue
+ * @interface ModelsStringsValue
  */
-export interface ModelsValue {
+export interface ModelsStringsValue {
     /**
-     * @type {number}
-     * @memberof ModelsValue
+     * @type {Array<string>}
+     * @memberof ModelsStringsValue
      */
-    value: number;
+    value: Array<string>;
 }

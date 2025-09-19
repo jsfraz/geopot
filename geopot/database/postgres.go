@@ -27,7 +27,7 @@ func SetupPostgres() {
 		utils.GetSingleton().Config.PostgresDb,
 	)
 	postgres, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
-		Logger: logger.Default.LogMode(logger.Error),
+		Logger: logger.Default.LogMode(utils.GetSingleton().Config.GetGormLogLevel()),
 		NowFunc: func() time.Time {
 			return time.Now().UTC() // Ensure all timestamps are UTC
 		},

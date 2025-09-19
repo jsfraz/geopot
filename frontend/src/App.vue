@@ -17,6 +17,8 @@ const apiConfig = new Configuration({
 const statsApi = new StatsApi(apiConfig);
 // StatCards
 const totalConnectionsCard = ref<InstanceType<typeof StatCard> | null>(null);
+const totalUniqueIpsCard = ref<InstanceType<typeof StatCard> | null>(null);
+const totalUniqueCountriesCard = ref<InstanceType<typeof StatCard> | null>(null);
 
 // WebSocket connection
 useWebSocket(websocketUrl,
@@ -40,10 +42,18 @@ useWebSocket(websocketUrl,
 
       switch (msg.type) {
         case 'attacker':
-          // TODO Globe arc
+          // TODO Globe arc here
           // Increase total connections stat card
           if (totalConnectionsCard.value) {
-            totalConnectionsCard.value.increaseValue();
+            totalConnectionsCard.value.increaseNumberValue();
+          }
+          // Add unique IP to total unique IPs stat card
+          if (totalUniqueIpsCard.value) {
+            totalUniqueIpsCard.value.increaseStringsValue(msg.data.ipAddress);
+          }
+          // Add unique country to total unique countries stat card
+          if (totalUniqueCountriesCard.value) {
+            totalUniqueCountriesCard.value.increaseStringsValue(msg.data.countryName);
           }
           break;
 
@@ -67,13 +77,13 @@ useWebSocket(websocketUrl,
     <div class="w-full h-1/6 flex p-4 gap-4">
       <!-- Total connections -->
       <div class="flex-1">
-        <StatCard ref="totalConnectionsCard" :title="'Total connections'" :observable="statsApi.getTotalConnectionCount()" />
+        <StatCard ref="totalConnectionsCard" :title="'Total connections'" :observableNumber="statsApi.getTotalConnectionCount()" />
       </div>
       <div class="flex-1">
-        <StatCard />
+        <StatCard ref="totalUniqueIpsCard" :title="'Total unique IPs'" :observableStrings="statsApi.getAllUniqueIPAddresses()" />
       </div>
       <div class="flex-1">
-        <StatCard />
+        <StatCard ref="totalUniqueCountriesCard" :title="'Total unique countries'" :observableStrings="statsApi.getAllUniqueCountries()" />
       </div>
       <div class="flex-1">
         <StatCard />
