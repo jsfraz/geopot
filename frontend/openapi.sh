@@ -3,7 +3,7 @@
 # https://openapi-generator.tech/docs/generators/typescript-rxjs/
 
 VERSION=7.15.0
-OPENAPI_PATH=https://petstore3.swagger.io/api/v3/openapi.json
+OPENAPI_PATH=http://localhost:8080/api/openapi.json
 
 # Download OpenaAPI spec
 # Download generator

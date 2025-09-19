@@ -17,12 +17,14 @@ import (
 func WebSocketHandler(c *gin.Context) {
 	// Configure WebSocket upgrader
 	upgrader := websocket.Upgrader{
-		CheckOrigin: nil, // No need to check origin when users connect from the mobile app
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 	// Upgrade HTTP connection to WebSocket
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
 	}
 

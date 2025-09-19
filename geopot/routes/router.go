@@ -27,26 +27,15 @@ func NewRouter() (*fizz.Fizz, error) {
 	}
 	// Recovery middleware
 	engine.Use(gin.Recovery())
-	// Default cors config, Allow Origin, Authorization header
+	// Default cors config, Allow Origin
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true
 	config.AllowCredentials = true
-	config.AllowHeaders = append(config.AllowHeaders, "Authorization")
+	config.AllowHeaders = append(config.AllowHeaders, "x-requested-with") // Vue.js sends this header for some reason
 	engine.Use(cors.New(config))
 
 	// Fizz instance
 	fizz := fizz.NewFromEngine(engine)
-	// Security
-	fizz.Generator().SetSecuritySchemes(map[string]*openapi.SecuritySchemeOrRef{
-		"bearerAuth": {
-			SecurityScheme: &openapi.SecurityScheme{
-				Type:         "http",
-				Scheme:       "bearer",
-				BearerFormat: "JWT",
-				Description:  "Put **_ONLY_** your JWT Bearer token on textbox below!",
-			},
-		},
-	})
 
 	// Base API route
 	grp := fizz.Group("api", "", "")
@@ -80,7 +69,8 @@ func NewRouter() (*fizz.Fizz, error) {
 	// WebSocket handler
 	engine.GET("/ws", handlers.WebSocketHandler)
 
-	// TODO Setup other routes
+	// Setup other routes
+	StatsRoute(grp)
 	if len(fizz.Errors()) != 0 {
 		return nil, fmt.Errorf("fizz errors: %v", fizz.Errors())
 	}

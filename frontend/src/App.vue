@@ -2,26 +2,19 @@
 import { useWebSocket } from '@vueuse/core';
 import type { WSMessage } from './types/ws_message';
 import Globe from './components/Globe.vue';
-import { onMounted, ref } from 'vue';
 import StatCard from './components/StatCard.vue';
+import { Configuration, StatsApi } from './api';
+import { ref } from 'vue';
 
 // WebSocket URL
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 // Globe component
 const globe = ref<InstanceType<typeof Globe> | null>(null);
-
-onMounted(() => {
-  /*
-  new UserApi().createUser({}).subscribe({
-    next: (response) => {
-      console.log('User created:', response);
-    },
-    error: (error) => {
-      console.error('Error creating user:', error);
-    },
-  });
-  */
+// API client config and instances
+const apiConfig = new Configuration({
+  basePath: import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin,
 });
+const statsApi = new StatsApi(apiConfig);
 
 // WebSocket connection
 useWebSocket(websocketUrl,
@@ -54,7 +47,7 @@ useWebSocket(websocketUrl,
   <!-- Stat cards -->
   <div class="w-full h-1/5 flex">
     <div class="flex-1 py-4 px-2">
-      <StatCard :title="'Total connections'" />
+      <StatCard :title="'Total connections'" :observable="statsApi.getTotalConnectionCount()" />
     </div>
     <div class="flex-1 py-4 px-2">
       <StatCard />

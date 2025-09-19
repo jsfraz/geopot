@@ -1,22 +1,35 @@
 <script setup lang="ts">
+import type { ModelsValue } from '@/api';
+import { Observable } from 'rxjs';
 import { ref, onMounted } from 'vue';
 import { VueSpinnerPulse } from 'vue3-spinners';
 
 // Define props with default values
 const props = defineProps({
     spinnerColor: { type: String, default: '#20c20e' },
-    title: { type: String, default: 'Text' },
-    value: { type: [Number, String], default: '0' },
+    title: { type: String, required: true, default: 'Stat Card' },
+    observable: { type: Observable<ModelsValue>, required: true, default: null },
 });
 
 const isLoaded = ref(false);
+const value = ref(0);
 
-// Simulace načítání dat
 onMounted(() => {
-    const randomDelay = Math.random() * 5000;
-    setTimeout(() => {
-        isLoaded.value = true;
-    }, randomDelay);
+    // Load data from observable
+    if (props.observable) {
+        props.observable.subscribe({
+            next: (data) => {
+                console.log('StatCard data received:', data);
+                value.value = data.value;
+                isLoaded.value = true;
+            },
+            error: (error) => {
+                // TODO show error state
+                console.error('Error loading StatCard data:', error);
+                isLoaded.value = true;
+            },
+        });
+    }
 });
 </script>
 
