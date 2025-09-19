@@ -57,3 +57,16 @@ func GetLast24HourConnections(c *gin.Context) (*models.NumberValue, error) {
 	}
 	return &models.NumberValue{Value: count}, nil
 }
+
+// Gets the server's own info.
+//
+//	@param c
+//	@return *models.Connection
+//	@return error
+func GetServerInfo(c *gin.Context) (*models.Connection, error) {
+	connection, err := database.GetSelfRecord()
+	if err != nil {
+		return nil, err
+	}
+	return connection, nil
+}

@@ -115,3 +115,7 @@ sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
 ```bash
 ./test.sh number_of_attempts
 ```
+
+### Swagger UI
+
+Swagger UI is available at `http://localhost:8080/swagger` after starting development mode.

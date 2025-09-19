@@ -7,25 +7,25 @@ import (
 
 // SSH connection
 type Connection struct {
-	ID uint64 `json:"id" gorm:"primaryKey;uniqueIndex:idx_id_timestamp,priority:1"`
+	ID uint64 `json:"id" gorm:"primaryKey;uniqueIndex:idx_id_timestamp,priority:1" validate:"required"`
 
-	IPVersion     int     `json:"ipVersion"`
-	IPAddress     string  `json:"ipAddress" gorm:"index:idx_ip_address"`
-	Latitude      float64 `json:"latitude"`
-	Longitude     float64 `json:"longitude"`
-	CountryName   string  `json:"countryName"`
-	CountryCode   string  `json:"countryCode" gorm:"index:idx_country_code"`
-	TimeZone      string  `json:"timeZone"`
-	ZipCode       string  `json:"zipCode"`
-	CityName      string  `json:"cityName"`
-	RegionName    string  `json:"regionName"`
-	IsProxy       bool    `json:"isProxy" gorm:"index:idx_is_proxy"`
-	Continent     string  `json:"continent"`
-	ContinentCode string  `json:"continentCode" gorm:"index:idx_continent_code"`
+	IPVersion     int     `json:"ipVersion" validate:"required"`
+	IPAddress     string  `json:"ipAddress" gorm:"index:idx_ip_address" validate:"required"`
+	Latitude      float64 `json:"latitude" validate:"required"`
+	Longitude     float64 `json:"longitude" validate:"required"`
+	CountryName   string  `json:"countryName" validate:"required"`
+	CountryCode   string  `json:"countryCode" gorm:"index:idx_country_code" validate:"required"`
+	TimeZone      string  `json:"timeZone" validate:"required"`
+	ZipCode       string  `json:"zipCode" validate:"required"`
+	CityName      string  `json:"cityName" validate:"required"`
+	RegionName    string  `json:"regionName" validate:"required"`
+	IsProxy       bool    `json:"isProxy" gorm:"index:idx_is_proxy" validate:"required"`
+	Continent     string  `json:"continent" validate:"required"`
+	ContinentCode string  `json:"continentCode" gorm:"index:idx_continent_code" validate:"required"`
 
-	User      string    `json:"user" gorm:"index:idx_user"`
-	Password  string    `json:"password"`
-	Timestamp time.Time `json:"timestamp" gorm:"type:timestamptz;index:idx_timestamp;uniqueIndex:idx_id_timestamp,priority:2;not null"`
+	User      string    `json:"user" gorm:"index:idx_user" validate:"required"`
+	Password  string    `json:"password" validate:"required"`
+	Timestamp time.Time `json:"timestamp" gorm:"type:timestamptz;index:idx_timestamp;uniqueIndex:idx_id_timestamp,priority:2;not null" validate:"required"`
 }
 
 // Create new SSH connection info.
@@ -84,6 +84,10 @@ func ConnectionFromJson(jsonData string) (*Connection, error) {
 	return &c, nil
 }
 
+// Marshal Connection to binary (JSON).
+//
+//	@return []byte
+//	@return error
 func (c Connection) MarshalBinary() ([]byte, error) {
 	return json.Marshal(c)
 }

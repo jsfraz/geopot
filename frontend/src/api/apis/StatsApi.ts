@@ -16,6 +16,7 @@ import type { AjaxResponse } from 'rxjs/ajax';
 import { BaseAPI } from '../runtime';
 import type { OperationOpts } from '../runtime';
 import type {
+    ModelsConnection,
     ModelsNumberValue,
     ModelsStringsValue,
 } from '../models';
@@ -60,6 +61,19 @@ export class StatsApi extends BaseAPI {
     getLast24HourConnections(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
         return this.request<ModelsNumberValue>({
             url: '/api/stats/last24HourConnections',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get the server\'s own info
+     * Self Info
+     */
+    getServerInfo(): Observable<ModelsConnection>
+    getServerInfo(opts?: OperationOpts): Observable<AjaxResponse<ModelsConnection>>
+    getServerInfo(opts?: OperationOpts): Observable<ModelsConnection | AjaxResponse<ModelsConnection>> {
+        return this.request<ModelsConnection>({
+            url: '/api/stats/selfInfo',
             method: 'GET',
         }, opts?.responseOpts);
     };

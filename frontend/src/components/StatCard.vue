@@ -100,11 +100,15 @@ function loadObservables() {
 
 // Increases value by 1
 function increaseNumberValue() {
+    if (!isLoaded.value) return;
+    
     value.value += 1;
 }
 
 // Increases strings value by adding new string if not exists and increases number value
 function increaseStringsValue(newString: string) {
+    if (!isLoaded.value) return;
+
     if (!stringsValue.value.includes(newString)) {
         stringsValue.value.push(newString);
         increaseNumberValue();
@@ -124,7 +128,7 @@ function increaseStringsValue(newString: string) {
             <div
                 class="border-1 border-hacker bg-hackerbg rounded-lg p-4 flex flex-col items-start justify-center h-full">
                 <p class="text-lg font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
-                <p class="text-5xl font-bold text-white">{{ value }}</p>
+                <p class="text-4xl font-bold text-white">{{ value }}</p>
             </div>
         </div>
     </div>

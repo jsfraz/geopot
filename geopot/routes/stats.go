@@ -63,4 +63,16 @@ func StatsRoute(g *fizz.RouterGroup) {
 			}),
 		tonic.Handler(handlers.GetLast24HourConnections, http.StatusOK),
 	)
+
+	// Get the server's own info.
+	grp.GET("selfInfo",
+		utils.CreateOperationOption(
+			"Self Info",
+			"Get the server's own info",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetServerInfo, http.StatusOK),
+	)
 }

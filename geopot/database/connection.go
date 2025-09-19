@@ -17,8 +17,8 @@ func InsertConnection(connection *models.Connection) error {
 	return utils.GetSingleton().Postgres.Create(connection).Error
 }
 
-// Get server public IP info and push to Valkey
-func GetSelfIpInfo() {
+// Set server public IP info and push to Valkey
+func SetSelfIpInfo() {
 	json, err := utils.GetIpInfo(nil)
 	if err != nil {
 		log.Fatalf("Failed to get server public IP info: %v", err)

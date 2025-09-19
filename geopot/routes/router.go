@@ -64,6 +64,11 @@ func NewRouter() (*fizz.Fizz, error) {
 			// TODO XLogo
 		}
 		grp.GET("openapi.json", nil, fizz.OpenAPI(infos, "json"))
+		// Swagger UI (https://github.com/swagger-api/swagger-ui/blob/HEAD/docs/usage/installation.md#unpkg)
+		engine.LoadHTMLGlob("html/*.html")
+		engine.GET("/swagger", func(c *gin.Context) {
+			c.HTML(200, "swagger.html", nil)
+		})
 	}
 
 	// WebSocket handler

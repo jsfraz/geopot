@@ -51,7 +51,7 @@ func main() {
 	}()
 
 	// Get self IP info
-	database.GetSelfIpInfo()
+	database.SetSelfIpInfo()
 	time.Sleep(time.Second)
 
 	// Server sshConfig with password callback denying everything
@@ -82,8 +82,7 @@ func main() {
 					log.Println(err)
 				} else {
 					// After successful upload, broadcast to WebSocket clients
-					wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
-					wsJsonBytes, err := wsMessage.MarshalBinary()
+					wsJsonBytes, err := connection.MarshalBinary()
 					if err != nil {
 						log.Printf("Error marshaling connection data: %v", err)
 					} else {
@@ -196,8 +195,7 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 						log.Println(err)
 					} else {
 						// After successful upload, broadcast to WebSocket clients
-						wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
-						wsJsonBytes, err := wsMessage.MarshalBinary()
+						wsJsonBytes, err := connection.MarshalBinary()
 						if err != nil {
 							log.Printf("Error marshaling connection data: %v", err)
 						} else {
