@@ -29,6 +29,7 @@ services:
       - geopot-timescaledb
       - geopot-valkey
     environment:
+      - GIN_MODE=release
       - POSTGRES_USER=geopot
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_SERVER=geopot-timescaledb

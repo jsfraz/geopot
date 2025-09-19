@@ -27,6 +27,8 @@ WORKDIR /app
 
 COPY --from=backend-build /app/geopot .
 
+COPY --from=backend-build /app/html ./html
+
 COPY --from=frontend-build /app/dist ./static
 
 EXPOSE 8080

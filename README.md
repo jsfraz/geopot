@@ -58,6 +58,7 @@ services:
       - geopot-timescaledb
       - geopot-valkey
     environment:
+      - GIN_MODE=release
       - POSTGRES_USER=geopot
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_SERVER=geopot-timescaledb
@@ -91,6 +92,7 @@ For deploying behind a reverse proxy see [nginx configuration](geopot.conf).
 
 | Variable          | Description           |
 |-------------------|-----------------------|
+| GIN_MODE          | Production/debug mode |
 | POSTGRES_USER     | PostgreSQL user       |
 | POSTGRES_PASSWORD | PostgreSQL password   |
 | POSTGRES_SERVER   | PostgreSQL server     |
