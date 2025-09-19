@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net"
 	"net/http"
 )
@@ -48,4 +49,9 @@ func GetIpInfo(ipAddress *string) (*string, error) {
 func IsPublicIP(ipAddress string) bool {
 	ip := net.ParseIP(ipAddress)
 	return ip != nil && !ip.IsPrivate() && !ip.IsLoopback() && !ip.IsUnspecified()
+}
+
+// Generating random coordinates for testing purposes
+func RandomCoordinate(min, max float64) float64 {
+	return min + (max-min)*(min+rand.Float64()*(max-min))
 }

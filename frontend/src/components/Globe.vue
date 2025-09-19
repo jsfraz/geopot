@@ -45,9 +45,15 @@ onMounted(() => {
     // https://github.com/vasturiano/globe.gl/blob/master/example/hexed-polygons/index.html
     fetch('assets/ne_110m_admin_0_countries.geojson').then(res => res.json()).then(countries => {
         if (globeContainer.value) {
+            // Získání rozměrů kontejneru
+            const width = globeContainer.value.clientWidth;
+            const height = globeContainer.value.clientHeight;
+            
             // Globe instance
             globe = new Globe(globeContainer.value)
-                // .globeImageUrl('//cdn.jsdelivr.net/npm/three-globe/example/img/earth-dark.jpg')
+                // Nastavení výšky a šířky podle kontejneru
+                .width(width)
+                .height(height)
                 .globeImageUrl('assets/earth-dark.jpg')
                 .backgroundColor('rgba(0,0,0,0)')
                 // Polygons
@@ -138,10 +144,10 @@ onMounted(() => {
 
 // Function to handle window resize
 function handleResize() {
-    if (globe) {
-        // Update globe size
-        globe.width(window.innerWidth);
-        globe.height(window.innerHeight);
+    if (globe && globeContainer.value) {
+        // Update globe size to match container size
+        globe.width(globeContainer.value.clientWidth);
+        globe.height(globeContainer.value.clientHeight);
     }
 }
 
@@ -317,7 +323,7 @@ function startStopRotation() {
 </script>
 
 <template>
-    <div class="relative w-full h-full overflow-hidden">
+    <div class="border-1 border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden">
         <Transition name="fade">
             <div v-if="!isGlobeLoaded"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/50">
@@ -337,5 +343,11 @@ function startStopRotation() {
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
+}
+
+/* Zajistěte, že kontejner i globus mají plnou výšku a šířku */
+:deep(canvas) {
+    width: 100% !important;
+    height: 100% !important;
 }
 </style>

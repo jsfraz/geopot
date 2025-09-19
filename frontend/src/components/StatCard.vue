@@ -11,6 +11,12 @@ const props = defineProps({
     observable: { type: Observable<ModelsValue>, required: true, default: null },
 });
 
+// Expose public methods
+defineExpose({
+    increaseValue,
+});
+
+// Loading state and value
 const isLoaded = ref(false);
 const value = ref(0);
 
@@ -21,16 +27,23 @@ onMounted(() => {
             next: (data) => {
                 console.log('StatCard data received:', data);
                 value.value = data.value;
-                isLoaded.value = true;
             },
             error: (error) => {
                 // TODO show error state
                 console.error('Error loading StatCard data:', error);
                 isLoaded.value = true;
             },
+            complete: () => {
+                isLoaded.value = true;
+            },
         });
     }
 });
+
+// Increases value by 1
+function increaseValue() {
+    value.value += 1;
+}
 </script>
 
 <template>
@@ -43,7 +56,7 @@ onMounted(() => {
         </Transition>
         <div>
             <div
-                class="border-1 border-hacker rounded-lg p-4 flex flex-col items-start justify-center h-full bg-hackerbg">
+                class="border-1 border-hacker bg-hackerbg rounded-lg p-4 flex flex-col items-start justify-center h-full">
                 <p class="text-lg font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
                 <p class="text-5xl font-bold text-white">{{ value }}</p>
             </div>
