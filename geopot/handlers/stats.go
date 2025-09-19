@@ -19,19 +19,6 @@ func GetTotalConnectionCount(c *gin.Context) (*models.NumberValue, error) {
 	return &models.NumberValue{Value: count}, nil
 }
 
-// Get the total number of unique IP addresses stored in the database.
-//
-//	@param c
-//	@return *models.Value
-//	@return error
-func GetTotalUniqueIPCount(c *gin.Context) (*models.NumberValue, error) {
-	count, err := database.GetTotalUniqueIPCount()
-	if err != nil {
-		return nil, err
-	}
-	return &models.NumberValue{Value: count}, nil
-}
-
 // Get all unique IP addresses stored in the database.
 //
 //	@param c
@@ -45,19 +32,6 @@ func GetAllUniqueIPAddresses(c *gin.Context) (*models.StringsValue, error) {
 	return &models.StringsValue{Value: ips}, nil
 }
 
-// Get the total number of unique countries stored in the database.
-//
-//	@param c
-//	@return *models.Value
-//	@return error
-func GetTotalUniqueCountryCount(c *gin.Context) (*models.NumberValue, error) {
-	count, err := database.GetTotalUniqueCountryCount()
-	if err != nil {
-		return nil, err
-	}
-	return &models.NumberValue{Value: count}, nil
-}
-
 // Get all unique countries stored in the database.
 //
 //	@param c
@@ -69,4 +43,17 @@ func GetAllUniqueCountries(c *gin.Context) (*models.StringsValue, error) {
 		return nil, err
 	}
 	return &models.StringsValue{Value: countries}, nil
+}
+
+// Get the number of connections in the last 24 hours.
+//
+//	@param c
+//	@return *models.Connection
+//	@return error
+func GetLast24HourConnections(c *gin.Context) (*models.NumberValue, error) {
+	count, err := database.GetLast24HourConnections()
+	if err != nil {
+		return nil, err
+	}
+	return &models.NumberValue{Value: count}, nil
 }

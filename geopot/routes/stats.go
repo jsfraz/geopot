@@ -28,18 +28,6 @@ func StatsRoute(g *fizz.RouterGroup) {
 		tonic.Handler(handlers.GetTotalConnectionCount, http.StatusOK),
 	)
 
-	// Total unique IPs
-	grp.GET("totalUniqueIps",
-		utils.CreateOperationOption(
-			"Total unique IP count",
-			"Get total unique IP count",
-			[]int{
-				http.StatusBadRequest,
-				http.StatusInternalServerError,
-			}),
-		tonic.Handler(handlers.GetTotalUniqueIPCount, http.StatusOK),
-	)
-
 	// All unique IPs
 	grp.GET("allUniqueIps",
 		utils.CreateOperationOption(
@@ -52,18 +40,6 @@ func StatsRoute(g *fizz.RouterGroup) {
 		tonic.Handler(handlers.GetAllUniqueIPAddresses, http.StatusOK),
 	)
 
-	// Total unique countries
-	grp.GET("totalUniqueCountries",
-		utils.CreateOperationOption(
-			"Total unique countries count",
-			"Get total unique countries count",
-			[]int{
-				http.StatusBadRequest,
-				http.StatusInternalServerError,
-			}),
-		tonic.Handler(handlers.GetTotalUniqueCountryCount, http.StatusOK),
-	)
-
 	// All unique countries
 	grp.GET("allUniqueCountries",
 		utils.CreateOperationOption(
@@ -74,5 +50,17 @@ func StatsRoute(g *fizz.RouterGroup) {
 				http.StatusInternalServerError,
 			}),
 		tonic.Handler(handlers.GetAllUniqueCountries, http.StatusOK),
+	)
+
+	// Get the number of connections in the last 24 hours.
+	grp.GET("last24HourConnections",
+		utils.CreateOperationOption(
+			"Last 24 Hour Connections",
+			"Get the number of connections in the last 24 hours",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetLast24HourConnections, http.StatusOK),
 	)
 }

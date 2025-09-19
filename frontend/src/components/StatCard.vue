@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ModelsNumberValue, ModelsStringsValue } from '@/api/models';
 import { Observable } from 'rxjs';
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { VueSpinnerPulse } from 'vue3-spinners';
 
 // Define props with default values
@@ -9,7 +9,8 @@ const props = defineProps({
     spinnerColor: { type: String, default: '#20c20e' },
     title: { type: String, default: 'Stat Card' },
     observableNumber: { type: Observable<ModelsNumberValue>, default: null },
-    observableStrings: { type: Observable<ModelsStringsValue>, default: null }
+    observableStrings: { type: Observable<ModelsStringsValue>, default: null },
+    refreshInterval: { type: Number, default: null },
 });
 
 // Expose public methods
@@ -22,6 +23,7 @@ defineExpose({
 const isLoaded = ref(false);
 const value = ref(0);
 const stringsValue = ref([] as string[]);
+let intervalId: number | null = null;
 
 onMounted(() => {
     // Observable validation
@@ -35,7 +37,29 @@ onMounted(() => {
         isLoaded.value = true;
         return;
     }
+    // Initial load
+    loadObservables();
+    // Set up refresh interval if provided
+    if (props.refreshInterval) {
+        if (props.refreshInterval <= 0) {
+            console.error('StatCard "' + props.title + '": refreshInterval must be greater than 0.');
+            isLoaded.value = true;
+            return;
+        }
+        intervalId = window.setInterval(loadObservables, props.refreshInterval);
+    }
+});
 
+// Clear interval on unmount
+onUnmounted(() => {
+    if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+    }
+});
+
+// Load data from observables
+function loadObservables() {
     // Load data from observable - result is number
     if (props.observableNumber) {
         props.observableNumber.subscribe({
@@ -72,7 +96,7 @@ onMounted(() => {
             }
         });
     }
-});
+}
 
 // Increases value by 1
 function increaseNumberValue() {
@@ -81,10 +105,10 @@ function increaseNumberValue() {
 
 // Increases strings value by adding new string if not exists and increases number value
 function increaseStringsValue(newString: string) {
-   if (!stringsValue.value.includes(newString)) {
-       stringsValue.value.push(newString);
-       increaseNumberValue();
-   }
+    if (!stringsValue.value.includes(newString)) {
+        stringsValue.value.push(newString);
+        increaseNumberValue();
+    }
 }
 </script>
 

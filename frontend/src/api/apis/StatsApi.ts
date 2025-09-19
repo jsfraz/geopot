@@ -52,6 +52,19 @@ export class StatsApi extends BaseAPI {
     };
 
     /**
+     * Get the number of connections in the last 24 hours
+     * Last 24 Hour Connections
+     */
+    getLast24HourConnections(): Observable<ModelsNumberValue>
+    getLast24HourConnections(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getLast24HourConnections(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/last24HourConnections',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
      * Get total connection count
      * Total connection count
      */
@@ -60,32 +73,6 @@ export class StatsApi extends BaseAPI {
     getTotalConnectionCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
         return this.request<ModelsNumberValue>({
             url: '/api/stats/totalConnections',
-            method: 'GET',
-        }, opts?.responseOpts);
-    };
-
-    /**
-     * Get total unique countries count
-     * Total unique countries count
-     */
-    getTotalUniqueCountryCount(): Observable<ModelsNumberValue>
-    getTotalUniqueCountryCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
-    getTotalUniqueCountryCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
-        return this.request<ModelsNumberValue>({
-            url: '/api/stats/totalUniqueCountries',
-            method: 'GET',
-        }, opts?.responseOpts);
-    };
-
-    /**
-     * Get total unique IP count
-     * Total unique IP count
-     */
-    getTotalUniqueIPCount(): Observable<ModelsNumberValue>
-    getTotalUniqueIPCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
-    getTotalUniqueIPCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
-        return this.request<ModelsNumberValue>({
-            url: '/api/stats/totalUniqueIps',
             method: 'GET',
         }, opts?.responseOpts);
     };

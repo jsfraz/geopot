@@ -19,6 +19,7 @@ const statsApi = new StatsApi(apiConfig);
 const totalConnectionsCard = ref<InstanceType<typeof StatCard> | null>(null);
 const totalUniqueIpsCard = ref<InstanceType<typeof StatCard> | null>(null);
 const totalUniqueCountriesCard = ref<InstanceType<typeof StatCard> | null>(null);
+const last24HourConnectionsCard = ref<InstanceType<typeof StatCard> | null>(null);
 
 // WebSocket connection
 useWebSocket(websocketUrl,
@@ -55,6 +56,10 @@ useWebSocket(websocketUrl,
           if (totalUniqueCountriesCard.value) {
             totalUniqueCountriesCard.value.increaseStringsValue(msg.data.countryName);
           }
+          // Increase last 24 hours stat card
+          if (last24HourConnectionsCard.value) {
+            last24HourConnectionsCard.value.increaseNumberValue();
+          }
           break;
 
         default:
@@ -80,13 +85,13 @@ useWebSocket(websocketUrl,
         <StatCard ref="totalConnectionsCard" :title="'Total connections'" :observableNumber="statsApi.getTotalConnectionCount()" />
       </div>
       <div class="flex-1">
-        <StatCard ref="totalUniqueIpsCard" :title="'Total unique IPs'" :observableStrings="statsApi.getAllUniqueIPAddresses()" />
+        <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'" :observableStrings="statsApi.getAllUniqueIPAddresses()" />
       </div>
       <div class="flex-1">
-        <StatCard ref="totalUniqueCountriesCard" :title="'Total unique countries'" :observableStrings="statsApi.getAllUniqueCountries()" />
+        <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'" :observableStrings="statsApi.getAllUniqueCountries()" />
       </div>
       <div class="flex-1">
-        <StatCard />
+        <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'" :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
       </div>
       <div class="flex-1">
         <StatCard />

@@ -18,19 +18,6 @@ func GetTotalConnectionCount() (int64, error) {
 	return count, nil
 }
 
-// Get the total number of unique IP addresses stored in the database.
-//
-//	@return int64
-//	@return error
-func GetTotalUniqueIPCount() (int64, error) {
-	var count int64
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Distinct("ip_address").Count(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 // Get all unique IP addresses stored in the database.
 //
 //	@return []string
@@ -44,19 +31,6 @@ func GetAllUniqueIPAddresses() ([]string, error) {
 	return ips, nil
 }
 
-// Get the total number of unique countries stored in the database.
-//
-//	@return int64
-//	@return error
-func GetTotalUniqueCountryCount() (int64, error) {
-	var count int64
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Distinct("country_name").Where("country_name != ''").Count(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
-}
-
 // Get all unique countries stored in the database.
 //
 //	@return []string
@@ -68,4 +42,17 @@ func GetAllUniqueCountries() ([]string, error) {
 		return nil, err
 	}
 	return countries, nil
+}
+
+// Get the number of connections in the last 24 hours.
+//
+//	@return int64
+//	@return error
+func GetLast24HourConnections() (int64, error) {
+	var count int64
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Where("timestamp >= NOW() - INTERVAL '24 HOURS'").Count(&count).Error
+	if err != nil {
+		return 0, err
+	}
+	return count, nil
 }
