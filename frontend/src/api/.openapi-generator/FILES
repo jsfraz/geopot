@@ -1,0 +1,11 @@
+.gitignore
+apis/StatsApi.ts
+apis/index.ts
+index.ts
+models/ModelsConnection.ts
+models/ModelsNumberValue.ts
+models/ModelsStringsValue.ts
+models/index.ts
+runtime.ts
+servers.ts
+tsconfig.json

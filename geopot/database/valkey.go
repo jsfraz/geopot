@@ -2,10 +2,10 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"jsfraz/geopot/models"
 	"jsfraz/geopot/utils"
 	"log"
-	"os"
 
 	"github.com/valkey-io/valkey-go"
 )
@@ -13,9 +13,11 @@ import (
 // Setup Valkey connection.
 func SetupValkey() {
 	valkey, err := valkey.NewClient(valkey.ClientOption{
-		InitAddress: []string{os.Getenv("VALKEY_SERVER") + ":" + os.Getenv("VALKEY_PORT")},
-		Password:    os.Getenv("VALKEY_PASSWORD"),
-		SelectDB:    0})
+		InitAddress: []string{fmt.Sprintf("%s:%d",
+			utils.GetSingleton().Config.ValkeyServer,
+			utils.GetSingleton().Config.ValkeyPort)},
+		Password: utils.GetSingleton().Config.ValkeyPassword,
+		SelectDB: 0})
 	// Check connection
 	if err != nil {
 		log.Fatal(err)

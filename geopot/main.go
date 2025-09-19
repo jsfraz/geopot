@@ -3,13 +3,13 @@ package main
 import (
 	"context"
 	"log"
-	"math/rand/v2"
 	"net"
+	"net/http"
 	"time"
 
 	"jsfraz/geopot/database"
-	"jsfraz/geopot/handlers"
 	"jsfraz/geopot/models"
+	"jsfraz/geopot/routes"
 	"jsfraz/geopot/utils"
 
 	"golang.org/x/crypto/ssh"
@@ -22,17 +22,40 @@ func main() {
 	log.SetPrefix("geopot: ")
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmicroseconds)
 
+	// Load config
+	utils.LoadConfig()
+
 	// Setup databases
-	time.Sleep(time.Second * 5)
 	database.SetupPostgres()
 	database.SetupValkey()
 
+	// Initialize WebSocket manager
+	utils.GetSingleton().WebSocketManager = utils.NewWebSocketManager()
+	go utils.GetSingleton().WebSocketManager.Start()
+
+	// Get router or panic
+	router, err := routes.NewRouter()
+	if err != nil {
+		log.Panicln(err)
+	}
+	// Start HTTP server
+	srv := &http.Server{
+		Addr:    "0.0.0.0:8080",
+		Handler: router,
+	}
+	// Start server in separated goroutine, panic on error
+	go func() {
+		if err := srv.ListenAndServe(); err != nil {
+			log.Panicln(err)
+		}
+	}()
+
 	// Get self IP info
-	getSelfIpInfo()
+	database.SetSelfIpInfo()
 	time.Sleep(time.Second)
 
-	// Server config with password callback denying everything
-	config := &ssh.ServerConfig{
+	// Server sshConfig with password callback denying everything
+	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			timestamp := time.Now()
 			log.Printf("Unsuccessful login attempt from %s by user '%s' with password '%s'.", conn.RemoteAddr(), conn.User(), password)
@@ -45,24 +68,25 @@ func main() {
 			// Upload to Valkey or Postgres (check if address is public)
 			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
 			if !utils.IsPublicIP(connection.IPAddress) {
-				/*
-					// Generate random coordinates (for localhost testing purposes)
+
+				// Generate random coordinates (for localhost testing purposes)
+				if utils.GetSingleton().Config.GinMode == "debug" {
 					connection.IPVersion = 4
-					connection.Longitude = randomCoordinate(-180.0, 180.0) // zeměpisná délka
-					connection.Latitude = randomCoordinate(-90.0, 90.0)    // zeměpisná šířka
-				*/
+					connection.IPAddress = utils.RandomPublicIP()
+					connection.Longitude = utils.RandomCoordinate(-180.0, 180.0)
+					connection.Latitude = utils.RandomCoordinate(-90.0, 90.0)
+				}
 
 				// Insert to Postgres
 				if err := database.InsertConnection(connection); err != nil {
 					log.Println(err)
 				} else {
 					// After successful upload, broadcast to WebSocket clients
-					wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
-					wsJsonBytes, err := wsMessage.MarshalBinary()
+					wsJsonBytes, err := connection.MarshalBinary()
 					if err != nil {
 						log.Printf("Error marshaling connection data: %v", err)
 					} else {
-						handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
+						utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 					}
 				}
 			} else {
@@ -81,7 +105,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to generate or load host key: %v", err)
 	}
-	config.AddHostKey(privateKey)
+	sshConfig.AddHostKey(privateKey)
 
 	// Listener
 	listener, err := net.Listen("tcp", "0.0.0.0:2222")
@@ -93,16 +117,13 @@ func main() {
 	// API call goroutine
 	go burstRateLimitCall(context.Background(), 60)
 
-	// HTTP file server goroutine
-	go handlers.ServeHttp("./static", 8080)
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatalf("Failed to accept incoming connection: %v", err)
 			continue
 		}
-		go handleConnection(conn, config)
+		go handleConnection(conn, sshConfig)
 	}
 }
 
@@ -174,41 +195,15 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 						log.Println(err)
 					} else {
 						// After successful upload, broadcast to WebSocket clients
-						wsMessage := models.NewWSMessage(models.WSMessageTypeAttackerInfo, *connection)
-						wsJsonBytes, err := wsMessage.MarshalBinary()
+						wsJsonBytes, err := connection.MarshalBinary()
 						if err != nil {
 							log.Printf("Error marshaling connection data: %v", err)
 						} else {
-							handlers.WebSocketManagerSingleton.BroadcastConnection(wsJsonBytes)
+							utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 						}
 					}
 				}
 			}
 		}()
 	}
-}
-
-// Get server public IP info and push to Valkey
-func getSelfIpInfo() {
-	json, err := utils.GetIpInfo(nil)
-	if err != nil {
-		log.Fatalf("Failed to get server public IP info: %v", err)
-	}
-	// Unmarshal to struct
-	connection, err := models.ConnectionFromJson(*json)
-	if err != nil {
-		log.Fatalf("Failed to unmarshal server public IP: %v", err)
-	}
-	// Print info
-	log.Printf("Server public IP info: %+v\n", connection.IPAddress)
-
-	// Push to Valkey
-	if err := database.PushSelfRecord(*connection); err != nil {
-		log.Fatalf("Failed to push self record to Valkey: %v", err)
-	}
-}
-
-// Generating random coordinates for testing purposes
-func randomCoordinate(min, max float64) float64 {
-	return min + (max-min)*(min+rand.Float64()*(max-min))
 }

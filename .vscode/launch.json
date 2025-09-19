@@ -7,7 +7,7 @@
             "request": "launch",
             "mode": "auto",
             "program": "${workspaceFolder}/geopot",
-            "envFile": "${workspaceFolder}/.env.dev",
+            "envFile": "${workspaceFolder}/.env.dev"
         },
         {
             "type": "firefox",
@@ -18,22 +18,21 @@
             "webRoot": "${workspaceFolder}/frontend/src",
             "pathMappings": [
                 {
+                    "url": "http://localhost:5173/src",
+                    "path": "${workspaceFolder}/frontend/src"
+                },
+                {
                     "url": "webpack:///src/",
                     "path": "${webRoot}/"
                 }
             ]
         },
         {
-            "type": "chrome",
+            "type": "node-terminal",
             "request": "launch",
-            "preLaunchTask": "vite-dev",
-            "name": "vuejs: chrome",
-            "url": "http://localhost:5173",
-            "webRoot": "${workspaceFolder}/frontend/src",
-            "sourceMapPathOverrides": {
-                "/@fs/*": "${webRoot}/*",
-                "/*": "${webRoot}/*"
-            }
+            "name": "Generate OpenAPI client",
+            "command": "npm run openapi",
+            "cwd": "${workspaceFolder}/frontend"
         }
     ]
 }
