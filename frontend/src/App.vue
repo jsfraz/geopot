@@ -5,6 +5,7 @@ import StatCard from './components/StatCard.vue';
 import { Configuration, StatsApi } from './api';
 import { ref } from 'vue';
 import type { ModelsConnection } from './api/models/ModelsConnection';
+import ServerInfoCard from './components/ServerInfoCard.vue';
 
 // WebSocket URL
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
@@ -86,7 +87,7 @@ useWebSocket(websocketUrl,
           :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
       </div>
       <div class="w-2/7">
-        <StatCard />
+        <ServerInfoCard :apiConfiguration="apiConfig" />
       </div>
     </div>
     <!-- Something and globe -->
@@ -104,7 +105,7 @@ useWebSocket(websocketUrl,
       <!-- Something -->
       <div class="w-5/7">
       </div>
-      <!-- Globe -->
+      <!-- Heatmap -->
       <div class="border-1 border-hacker bg-hackerbg rounded-lg w-2/7 flex items-center justify-center">
         <p class="text-white">Heatmap will be implemented here</p>
       </div>

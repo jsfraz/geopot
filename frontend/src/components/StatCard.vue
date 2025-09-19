@@ -29,24 +29,24 @@ onMounted(() => {
     // Observable validation
     if (props.observableNumber && props.observableStrings) {
         console.error('StatCard "' + props.title + '": Both observableNumber and observableStrings props are set. Please provide only one.');
-        isLoaded.value = true;
         return;
     }
     if (!props.observableNumber && !props.observableStrings) {
         console.error('StatCard "' + props.title + '": Neither observableNumber nor observableStrings prop is set. Please provide one.');
-        isLoaded.value = true;
         return;
     }
-    // Initial load
-    loadObservables();
     // Set up refresh interval if provided
     if (props.refreshInterval) {
         if (props.refreshInterval <= 0) {
             console.error('StatCard "' + props.title + '": refreshInterval must be greater than 0.');
-            isLoaded.value = true;
             return;
         }
+        // Initial load
+        loadObservables();
         intervalId = window.setInterval(loadObservables, props.refreshInterval);
+    } else {
+        // Initial load
+        loadObservables();
     }
 });
 
@@ -101,7 +101,7 @@ function loadObservables() {
 // Increases value by 1
 function increaseNumberValue() {
     if (!isLoaded.value) return;
-    
+
     value.value += 1;
 }
 
@@ -126,9 +126,9 @@ function increaseStringsValue(newString: string) {
         </Transition>
         <div>
             <div
-                class="border-1 border-hacker bg-hackerbg rounded-lg p-4 flex flex-col items-start justify-center h-full">
-                <p class="text-lg font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
-                <p class="text-4xl font-bold text-white">{{ value }}</p>
+                class="border-1 border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full">
+                <p class="text-base font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
+                <p class="text-3xl font-bold text-white">{{ value }}</p>
             </div>
         </div>
     </div>
