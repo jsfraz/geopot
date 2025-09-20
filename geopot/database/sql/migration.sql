@@ -15,9 +15,6 @@ CREATE INDEX IF NOT EXISTS idx_connections_timestamp_country ON connections (tim
 CREATE INDEX IF NOT EXISTS idx_connections_timestamp_user ON connections (timestamp, "user");
 CREATE INDEX IF NOT EXISTS idx_connections_ip_timestamp ON connections (ip_address, timestamp DESC);
 
--- Add retention policy (keeping data for 3 months)
-SELECT add_retention_policy('connections', INTERVAL '3 months', if_not_exists => TRUE);
-
 -- Add compression policy (compress chunks older than 7 days)
 ALTER TABLE connections SET (
     timescaledb.compress,
