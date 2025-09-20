@@ -128,7 +128,7 @@ function increaseStringsValue(newString: string) {
             <div
                 class="border-1 border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full">
                 <p class="text-base font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
-                <p class="text-3xl font-bold text-white">{{ value }}</p>
+                <p class="text-3xl font-bold text-white">{{ value.toLocaleString() }}</p>
             </div>
         </div>
     </div>
