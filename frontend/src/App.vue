@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useWebSocket } from '@vueuse/core';
 import Globe from './components/Globe.vue';
+import Heatmap from './components/Heatmap.vue';
 import StatCard from './components/StatCard.vue';
 import { Configuration, StatsApi } from './api';
 import { ref } from 'vue';
@@ -11,6 +12,8 @@ import ServerInfoCard from './components/ServerInfoCard.vue';
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 // Globe component
 const globe = ref<InstanceType<typeof Globe> | null>(null);
+// Heatmap component
+const heatmap = ref<InstanceType<typeof Heatmap> | null>(null);
 // API client config and instances
 const apiConfig = new Configuration({
   basePath: import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin,
@@ -41,7 +44,7 @@ useWebSocket(websocketUrl,
       console.log('WebSocket message received:', msg);
 
       // Globe WebsocketMessage handler
-      if (globe.value && msg.latitude && msg.longitude) {
+      if (globe.value && msg.latitude != 0 && msg.longitude != 0) {
         globe.value.emitArc(msg);
       }
       // Increase total connections stat card
@@ -106,8 +109,8 @@ useWebSocket(websocketUrl,
       <div class="w-5/7">
       </div>
       <!-- Heatmap -->
-      <div class="border-1 border-hacker bg-hackerbg rounded-lg w-2/7 flex items-center justify-center">
-        <p class="text-white">Heatmap will be implemented here</p>
+      <div class="w-2/7">
+        <Heatmap :apiConfiguration="apiConfig" ref="heatmap" />
       </div>
     </div>
   </div>

@@ -70,3 +70,16 @@ func GetServerInfo(c *gin.Context) (*models.Connection, error) {
 	}
 	return connection, nil
 }
+
+// Get all latitude and longitude pairs from the database.
+//
+//	@param c
+//	@return []models.LatLng
+//	@return error
+func GetAllLatLng(c *gin.Context) (*[]models.LatLng, error) {
+	latlngs, err := database.GetAllLatLngs()
+	if err != nil {
+		return nil, err
+	}
+	return &latlngs, nil
+}

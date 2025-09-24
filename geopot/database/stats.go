@@ -56,3 +56,17 @@ func GetLast24HourConnections() (int64, error) {
 	}
 	return count, nil
 }
+
+// Get all latitude and longitude pairs from the database.
+//
+//	@return []models.LatLng
+//	@return error
+func GetAllLatLngs() ([]models.LatLng, error) {
+	var latLngs []models.LatLng
+	// err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("latitude, longitude").Where("latitude != ? AND longitude != ?", 0, 0).Find(&latLngs).Error
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("latitude, longitude").Find(&latLngs).Error
+	if err != nil {
+		return nil, err
+	}
+	return latLngs, nil
+}

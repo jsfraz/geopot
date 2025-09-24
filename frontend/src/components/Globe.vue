@@ -123,11 +123,59 @@ onMounted(() => {
                 .ringPropagationSpeed(props.ringPropagationSpeed)
                 .ringRepeatPeriod(props.flightTime * props.arcRelLength / props.numRings)
                 .onGlobeReady(() => {
-                    // Rotate globe
-                    if (autoRotate) {
-                        startRotation();
+                    // Create marker on globe
+                    if (props.apiConfiguration) {
+                        new StatsApi(props.apiConfiguration).getServerInfo().subscribe({
+                            next: (data) => {
+                                serverMarkerData = {
+                                    lat: data.latitude,
+                                    lng: data.longitude,
+                                    size: 1,
+                                    color: '',
+                                };
+                                // https://github.com/vasturiano/globe.gl/blob/master/example/html-markers/index.html
+                                globe!
+                                    .htmlElementsData([serverMarkerData])
+                                    .htmlElement(() => {
+                                        const el = document.createElement('div');
+                                        el.innerHTML = markerSvg;
+                                        el.style.width = '30px';
+                                        el.style.height = '30px';
+                                        el.style.pointerEvents = 'auto';
+                                        return el;
+                                    });
+                                // Focus the camera on this position
+                                globe!.pointOfView({
+                                    lat: serverMarkerData.lat,
+                                    lng: serverMarkerData.lng,
+                                    altitude: 2.5
+                                }, 2500);
+                            },
+                            error: (error) => {
+                                // TODO show error state
+                                console.error('Error fetching server info:', error);
+
+                                // Rotate globe
+                                if (autoRotate) {
+                                    startRotation();
+                                }
+                                isGlobeLoaded.value = true;
+                            },
+                            complete: () => {
+                                // Rotate globe
+                                if (autoRotate) {
+                                    startRotation();
+                                }
+                                isGlobeLoaded.value = true;
+                            }
+                        });
+                    } else {
+                        // Rotate globe
+                        if (autoRotate) {
+                            startRotation();
+                        }
+                        isGlobeLoaded.value = true;
                     }
-                    isGlobeLoaded.value = true;
                 })
                 .onGlobeClick(() => {
                     startStopRotation();
@@ -135,42 +183,6 @@ onMounted(() => {
                 .onHexPolygonClick((_) => {
                     startStopRotation();
                 });
-
-            // Create marker on globe
-            if (props.apiConfiguration) {
-                new StatsApi(props.apiConfiguration).getServerInfo().subscribe({
-                    next: (data) => {
-                        serverMarkerData = {
-                            lat: data.latitude,
-                            lng: data.longitude,
-                            size: 1,
-                            color: '',
-                        };
-                        // https://github.com/vasturiano/globe.gl/blob/master/example/html-markers/index.html
-                        globe!
-                            .htmlElementsData([serverMarkerData])
-                            .htmlElement(() => {
-                                const el = document.createElement('div');
-                                el.innerHTML = markerSvg;
-                                el.style.width = '30px';
-                                el.style.height = '30px';
-                                el.style.pointerEvents = 'auto';
-                                return el;
-                            });
-                        // Focus the camera on this position
-                        globe!.pointOfView({
-                            lat: serverMarkerData.lat,
-                            lng: serverMarkerData.lng,
-                            altitude: 2.5
-                        }, 2500);
-                    },
-                    error: (error) => {
-                        // TODO show error state
-                        console.error('Error fetching server info:', error);
-                    },
-                    complete: () => { }
-                });
-            }
         }
     });
 
@@ -332,7 +344,6 @@ function startStopRotation() {
     opacity: 0;
 }
 
-/* Zajistěte, že kontejner i globus mají plnou výšku a šířku */
 :deep(canvas) {
     width: 100% !important;
     height: 100% !important;

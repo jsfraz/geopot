@@ -75,4 +75,16 @@ func StatsRoute(g *fizz.RouterGroup) {
 			}),
 		tonic.Handler(handlers.GetServerInfo, http.StatusOK),
 	)
+
+	// Get all latitude and longitude pairs from the database.
+	grp.GET("allLatLng",
+		utils.CreateOperationOption(
+			"All Latitude and Longitude",
+			"Get all latitude and longitude pairs from the database",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetAllLatLng, http.StatusOK),
+	)
 }

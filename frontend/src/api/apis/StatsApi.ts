@@ -17,6 +17,7 @@ import { BaseAPI } from '../runtime';
 import type { OperationOpts } from '../runtime';
 import type {
     ModelsConnection,
+    ModelsLatLng,
     ModelsNumberValue,
     ModelsStringsValue,
 } from '../models';
@@ -25,6 +26,19 @@ import type {
  * no description
  */
 export class StatsApi extends BaseAPI {
+
+    /**
+     * Get all latitude and longitude pairs from the database
+     * All Latitude and Longitude
+     */
+    getAllLatLng(): Observable<Array<ModelsLatLng>>
+    getAllLatLng(opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsLatLng>>>
+    getAllLatLng(opts?: OperationOpts): Observable<Array<ModelsLatLng> | AjaxResponse<Array<ModelsLatLng>>> {
+        return this.request<Array<ModelsLatLng>>({
+            url: '/api/stats/allLatLng',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
 
     /**
      * Get all unique countries
