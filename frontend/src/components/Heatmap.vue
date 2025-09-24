@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { map, latLng, tileLayer, heatLayer, LatLng } from "leaflet";
+import { map, latLng, tileLayer, heatLayer, LatLng, type HeatLayer } from "leaflet";
 import { type Map } from "leaflet";
 import "leaflet.heat";
 import { VueSpinnerPacman } from 'vue3-spinners';
@@ -18,21 +18,19 @@ const props = defineProps({
 const isHeatmapLoaded = ref(false);
 const heatmapContainer = ref<HTMLElement | null>(null);
 let heatmap: Map | null = null;
+let heat: HeatLayer = heatLayer([], {});
 
 onMounted(() => {
     if (heatmapContainer.value) {
         heatmap = map(heatmapContainer.value, {
             zoom: 1,
             minZoom: 1,
-            maxZoom: 13,
+            maxZoom: 15,
             center: latLng(52.6182256, 1.3723268),     // Norwich UK
             layers: [
                 // TODO Different provider for dark mode?
-                tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    minZoom: 1,
-                    maxZoom: 13,
-                    attribution: ''
-                })
+                tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                heat
             ]
         }).whenReady(() => {
             // Load data
@@ -40,10 +38,7 @@ onMounted(() => {
                 new StatsApi(props.apiConfiguration).getAllLatLng().subscribe({
                     next: (data: ModelsLatLng[]) => {
                         if (data.length > 0) {
-                            heatLayer(
-                                data.map<LatLng>(item => latLng(item.latitude, item.longitude)),
-                                { })
-                                .addTo(heatmap!);
+                            heat.setLatLngs(data.map<LatLng>(item => latLng(item.latitude, item.longitude)));
                         }
                     },
                     error: (error) => {
