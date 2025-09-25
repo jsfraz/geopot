@@ -15,6 +15,11 @@ const props = defineProps({
     spinnerColor: { type: String, default: '#20c20e' },
 });
 
+// Expose public methods
+defineExpose({
+    addPoint
+});
+
 // Heatmap setup
 const isHeatmapLoaded = ref(false);
 const heatmapContainer = ref<HTMLElement | null>(null);
@@ -32,7 +37,7 @@ onMounted(() => {
             zoom: 1,
             minZoom: 1,
             maxZoom: 15,
-            center: latLng(52.6182256, 1.3723268),     // Norwich UK
+            center: latLng(44.33, 10.5),
             layers: [
                 tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
                 heat
@@ -60,6 +65,12 @@ onMounted(() => {
         });
     }
 });
+
+// Adds a new point to the heatmap
+function addPoint(lat: number, lng: number) {
+    if (!heatmap) return;
+    heat.addLatLng([lat, lng, 1]);
+}
 </script>
 
 <template>

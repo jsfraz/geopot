@@ -63,6 +63,10 @@ useWebSocket(websocketUrl,
       if (last24HourConnectionsCard.value) {
         last24HourConnectionsCard.value.increaseNumberValue();
       }
+      // Add point to heatmap
+      if (heatmap.value && msg.latitude != 0 && msg.longitude != 0) {
+        heatmap.value.addPoint(msg.latitude, msg.longitude);
+      }
     },
   }
 );
