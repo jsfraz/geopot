@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { map, latLng, tileLayer, heatLayer, LatLng, type HeatLayer } from "leaflet";
+import { map, latLng, tileLayer, type HeatLayer } from "leaflet";
 import { type Map } from "leaflet";
+import { heatLayer } from "leaflet";
 import "leaflet.heat";
 import { VueSpinnerPacman } from 'vue3-spinners';
 import { Configuration } from '@/api/runtime';
 import { StatsApi } from '@/api/apis';
-import type { ModelsLatLng } from '@/api';
+import { type ModelsLatLng } from '@/api';
 
 // Define props with default values
 const props = defineProps({
@@ -18,7 +19,12 @@ const props = defineProps({
 const isHeatmapLoaded = ref(false);
 const heatmapContainer = ref<HTMLElement | null>(null);
 let heatmap: Map | null = null;
-let heat: HeatLayer = heatLayer([], {});
+let heat: HeatLayer = heatLayer([], {
+    radius: 25,
+    blur: 15,
+    maxZoom: 15,
+    minOpacity: 0.4
+});
 
 onMounted(() => {
     if (heatmapContainer.value) {
@@ -28,7 +34,6 @@ onMounted(() => {
             maxZoom: 15,
             center: latLng(52.6182256, 1.3723268),     // Norwich UK
             layers: [
-                // TODO Different provider for dark mode?
                 tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
                 heat
             ]
@@ -38,15 +43,14 @@ onMounted(() => {
                 new StatsApi(props.apiConfiguration).getAllLatLng().subscribe({
                     next: (data: ModelsLatLng[]) => {
                         if (data.length > 0) {
-                            heat.setLatLngs(data.map<LatLng>(item => latLng(item.latitude, item.longitude)));
+                            heat.setLatLngs(data.map(item => [item.latitude, item.longitude, 1]));
                         }
                     },
                     error: (error) => {
-                        // TODO show error state
                         console.error('Error fetching data for heatmap:', error);
-
                         isHeatmapLoaded.value = true;
-                    }, complete: () => {
+                    }, 
+                    complete: () => {
                         isHeatmapLoaded.value = true;
                     }
                 });
