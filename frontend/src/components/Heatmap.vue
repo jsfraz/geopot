@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { map, latLng, tileLayer, type HeatLayer } from "leaflet";
-import { type Map } from "leaflet";
-import { heatLayer } from "leaflet";
+import * as L from "leaflet";
 import "leaflet.heat";
 import { VueSpinnerPacman } from 'vue3-spinners';
 import { Configuration } from '@/api/runtime';
@@ -23,19 +21,22 @@ defineExpose({
 // Heatmap setup
 const isHeatmapLoaded = ref(false);
 const heatmapContainer = ref<HTMLElement | null>(null);
-let heatmap: Map | null = null;
-let heat: HeatLayer = heatLayer([], {
-    radius: 25,
-    blur: 15,
-    maxZoom: 15,
-    minOpacity: 0.4
-});
+let heatmap: L.Map | null = null;
+let heat: any = null;
 
 onMounted(() => {
     if (heatmapContainer.value) {
-        // Zabrani leaflet-heat spadnout, pokud se pokusi prekreslit heatmapu ve chvili, kdy okno zmensime natolik, ze vyška/sirka divu bude 0
-        const originalRedraw = (heat as any)._redraw;
-        (heat as any)._redraw = function () {
+        // Map initialization
+        heat = (L as any).heatLayer([], {
+            radius: 25,
+            blur: 15,
+            maxZoom: 15,
+            minOpacity: 0.4
+        });
+
+        // Prevents the leaflet-heat component from crashing if it attempts to redraw the heatmap when the window is minimized to the point where the height or width of the div is 0
+        const originalRedraw = heat._redraw;
+        heat._redraw = function () {
             if (this._map && (this._map.getSize().x <= 0 || this._map.getSize().y <= 0)) {
                 return;
             }
@@ -44,13 +45,13 @@ onMounted(() => {
             }
         };
 
-        heatmap = map(heatmapContainer.value, {
+        heatmap = L.map(heatmapContainer.value, {
             zoom: 1,
             minZoom: 1,
             maxZoom: 15,
-            center: latLng(44.33, 10.5),
+            center: L.latLng(44.33, 10.5),
             layers: [
-                tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
                 heat
             ]
         }).whenReady(() => {
@@ -59,7 +60,8 @@ onMounted(() => {
                 new StatsApi(props.apiConfiguration).getAllLatLng().subscribe({
                     next: (data: ModelsLatLng[]) => {
                         if (data.length > 0) {
-                            heat.setLatLngs(data.map(item => [item.latitude, item.longitude, 1]));
+                            const points = data.map(item => [item.latitude, item.longitude, 1] as [number, number, number]);
+                            heat.setLatLngs(points);
                         }
                     },
                     error: (error) => {
@@ -79,7 +81,7 @@ onMounted(() => {
 
 // Adds a new point to the heatmap
 function addPoint(lat: number, lng: number) {
-    if (!heatmap) return;
+    if (!heatmap || !heat) return;
     heat.addLatLng([lat, lng, 1]);
 }
 </script>
@@ -105,10 +107,5 @@ function addPoint(lat: number, lng: number) {
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
-}
-
-:deep(canvas) {
-    width: 100% !important;
-    height: 100% !important;
 }
 </style>
