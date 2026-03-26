@@ -1,0 +1,7 @@
+body {
+  font-family: 'FiraCodeNerdFontMono-Regular', sans-serif;
+}
+
+.leaflet-control-attribution {
+    display: none;
+}

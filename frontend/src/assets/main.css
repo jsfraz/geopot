@@ -1,5 +1,6 @@
 @import './base.css';
 @import "tailwindcss";
+@import 'leaflet/dist/leaflet.css';
 
 @theme {
   /*  */
@@ -15,8 +16,4 @@
   font-weight: normal;
   font-style: normal;
   font-display: swap; /* Helps with loading performance */
-}
-
-body {
-  font-family: 'FiraCodeNerdFontMono-Regular', sans-serif;
 }

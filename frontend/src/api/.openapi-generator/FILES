@@ -3,6 +3,7 @@ apis/StatsApi.ts
 apis/index.ts
 index.ts
 models/ModelsConnection.ts
+models/ModelsLatLng.ts
 models/ModelsNumberValue.ts
 models/ModelsStringsValue.ts
 models/index.ts

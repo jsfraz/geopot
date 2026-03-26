@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useWebSocket } from '@vueuse/core';
 import Globe from './components/Globe.vue';
+import Heatmap from './components/Heatmap.vue';
 import StatCard from './components/StatCard.vue';
 import { Configuration, StatsApi } from './api';
 import { ref } from 'vue';
@@ -11,6 +12,8 @@ import ServerInfoCard from './components/ServerInfoCard.vue';
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 // Globe component
 const globe = ref<InstanceType<typeof Globe> | null>(null);
+// Heatmap component
+const heatmap = ref<InstanceType<typeof Heatmap> | null>(null);
 // API client config and instances
 const apiConfig = new Configuration({
   basePath: import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin,
@@ -41,7 +44,7 @@ useWebSocket(websocketUrl,
       console.log('WebSocket message received:', msg);
 
       // Globe WebsocketMessage handler
-      if (globe.value && msg.latitude && msg.longitude) {
+      if (globe.value && msg.latitude != 0 && msg.longitude != 0) {
         globe.value.emitArc(msg);
       }
       // Increase total connections stat card
@@ -60,54 +63,60 @@ useWebSocket(websocketUrl,
       if (last24HourConnectionsCard.value) {
         last24HourConnectionsCard.value.increaseNumberValue();
       }
+      // Add point to heatmap
+      if (heatmap.value && msg.latitude != 0 && msg.longitude != 0) {
+        heatmap.value.addPoint(msg.latitude, msg.longitude);
+      }
     },
   }
 );
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen xl:min-h-200 xl:h-screen xl:overflow-hidden">
     <!-- Stat cards -->
-    <div class="w-full h-1/6 flex p-4 gap-4">
-      <!-- Total connections -->
-      <div class="flex-1">
-        <StatCard ref="totalConnectionsCard" :title="'Total connections'"
-          :observableNumber="statsApi.getTotalConnectionCount()" />
+    <div class="w-full xl:h-1/6 flex flex-col xl:flex-row p-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-1 gap-4">
+        <!-- Total connections -->
+        <div class="flex-1">
+          <StatCard ref="totalConnectionsCard" :title="'Total connections'"
+            :observableNumber="statsApi.getTotalConnectionCount()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'"
+            :observableStrings="statsApi.getAllUniqueIPAddresses()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'"
+            :observableStrings="statsApi.getAllUniqueCountries()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'"
+            :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
+        </div>
       </div>
-      <div class="flex-1">
-        <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'"
-          :observableStrings="statsApi.getAllUniqueIPAddresses()" />
-      </div>
-      <div class="flex-1">
-        <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'"
-          :observableStrings="statsApi.getAllUniqueCountries()" />
-      </div>
-      <div class="flex-1">
-        <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'"
-          :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
-      </div>
-      <div class="w-2/7">
+      <div class="w-full xl:w-2/7">
         <ServerInfoCard :apiConfiguration="apiConfig" />
       </div>
     </div>
     <!-- Something and globe -->
-    <div class="w-full h-2/5 flex px-4 gap-4">
+    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 gap-4 mt-4 xl:mt-0">
       <!-- Something -->
-      <div class="w-5/7">
+      <div class="hidden xl:block xl:w-5/7">
       </div>
       <!-- Globe -->
-      <div class="w-2/7">
+      <div class="w-full xl:w-2/7 h-72 xl:h-auto">
         <Globe :apiConfiguration="apiConfig" ref="globe" />
       </div>
     </div>
     <!-- Something and heatmap -->
-    <div class="w-full h-2/5 flex px-4 p-4 gap-4">
+    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 p-4 gap-4">
       <!-- Something -->
-      <div class="w-5/7">
+      <div class="hidden xl:block xl:w-5/7">
       </div>
       <!-- Heatmap -->
-      <div class="border-1 border-hacker bg-hackerbg rounded-lg w-2/7 flex items-center justify-center">
-        <p class="text-white">Heatmap will be implemented here</p>
+      <div class="w-full xl:w-2/7 h-72 xl:h-auto">
+        <Heatmap :apiConfiguration="apiConfig" ref="heatmap" />
       </div>
     </div>
   </div>

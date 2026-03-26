@@ -124,9 +124,9 @@ function increaseStringsValue(newString: string) {
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
-        <div>
+        <div class="h-full">
             <div
-                class="border-1 border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full">
+                class="border border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full w-full">
                 <p class="text-base font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
                 <p class="text-3xl font-bold text-white">{{ value.toLocaleString() }}</p>
             </div>

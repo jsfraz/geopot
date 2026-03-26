@@ -1,5 +1,5 @@
 # Builder stage for backend
-FROM golang:1.25.1-alpine AS backend-build
+FROM golang:1.26.1-alpine AS backend-build
 
 WORKDIR /app
 
@@ -10,7 +10,7 @@ RUN go mod download
 RUN go build -o geopot
 
 # Builder stage for frontend
-FROM node:22-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 
 WORKDIR /app
 

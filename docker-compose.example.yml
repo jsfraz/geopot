@@ -46,10 +46,6 @@ services:
       - /etc/localtime:/etc/localtime:ro
     restart: always
 
-networks:
-  geopot:
-    name: geopot
-
 volumes:
   timescaledb_data:
   valkey_data:
