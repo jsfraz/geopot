@@ -11,6 +11,8 @@ import (
 //	@return error
 func GetTotalConnectionCount() (int64, error) {
 	var count int64
+	// Reverted to raw table for 100% accuracy.
+	// Index-only scan on idx_id_timestamp makes this fast enough for 5M+ records.
 	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Count(&count).Error
 	if err != nil {
 		return 0, err
@@ -50,7 +52,11 @@ func GetAllUniqueCountries() ([]string, error) {
 //	@return error
 func GetLast24HourConnections() (int64, error) {
 	var count int64
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Where("timestamp >= NOW() - INTERVAL '24 HOURS'").Count(&count).Error
+	// Reverted to raw table for absolute precision. 
+	// Efficiently uses idx_timestamp or idx_id_timestamp.
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
+		Where("timestamp >= NOW() - INTERVAL '24 HOURS'").
+		Count(&count).Error
 	if err != nil {
 		return 0, err
 	}
@@ -63,10 +69,10 @@ func GetLast24HourConnections() (int64, error) {
 //	@return error
 func GetAllLatLngs() ([]models.LatLng, error) {
 	var latLngs []models.LatLng
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
-		Select("ROUND(latitude::numeric, 1) AS latitude, ROUND(longitude::numeric, 1) AS longitude, COUNT(*) AS intensity").
-		Where("latitude != 0 AND longitude != 0").
-		Group("1, 2").
+	// Query from Continuous Aggregate view (pre-calculated)
+	err := utils.GetSingleton().Postgres.Table("heatmap_1h").
+		Select("latitude, longitude, SUM(intensity) AS intensity").
+		Group("latitude, longitude").
 		Find(&latLngs).Error
 	if err != nil {
 		return nil, err

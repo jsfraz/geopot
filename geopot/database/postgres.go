@@ -48,6 +48,13 @@ func SetupPostgres() {
 		log.Fatal(err)
 	}
 
+	// Refresh Materialized Views (backfill historical data)
+	// These procedures cannot run inside certain transaction blocks, so we run them separately.
+	// This ensures that the 5M+ historical records are visible on the dashboard immediately.
+	log.Println("Refreshing continuous aggregates (this may take a moment on first run)...")
+	postgres.Exec("CALL refresh_continuous_aggregate('heatmap_1h', NULL, NULL)")
+	postgres.Exec("CALL refresh_continuous_aggregate('stats_hourly', NULL, NULL)")
+
 	// Set Postgres in singleton
 	utils.GetSingleton().Postgres = *postgres
 }
