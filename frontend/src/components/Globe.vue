@@ -322,7 +322,7 @@ function startStopRotation() {
 </script>
 
 <template>
-    <div class="border-1 border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden">
+    <div class="border border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden">
         <Transition name="fade">
             <div v-if="!isGlobeLoaded"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">

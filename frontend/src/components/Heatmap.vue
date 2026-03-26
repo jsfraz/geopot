@@ -33,6 +33,17 @@ let heat: HeatLayer = heatLayer([], {
 
 onMounted(() => {
     if (heatmapContainer.value) {
+        // Zabrani leaflet-heat spadnout, pokud se pokusi prekreslit heatmapu ve chvili, kdy okno zmensime natolik, ze vyška/sirka divu bude 0
+        const originalRedraw = (heat as any)._redraw;
+        (heat as any)._redraw = function () {
+            if (this._map && (this._map.getSize().x <= 0 || this._map.getSize().y <= 0)) {
+                return;
+            }
+            if (originalRedraw) {
+                originalRedraw.call(this);
+            }
+        };
+
         heatmap = map(heatmapContainer.value, {
             zoom: 1,
             minZoom: 1,
@@ -54,7 +65,7 @@ onMounted(() => {
                     error: (error) => {
                         console.error('Error fetching data for heatmap:', error);
                         isHeatmapLoaded.value = true;
-                    }, 
+                    },
                     complete: () => {
                         isHeatmapLoaded.value = true;
                     }
@@ -74,14 +85,14 @@ function addPoint(lat: number, lng: number) {
 </script>
 
 <template>
-    <div class="border-1 border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden">
+    <div class="border border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden min-h-2.5 min-w-2.5">
         <Transition name="fade">
             <div v-if="!isHeatmapLoaded"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">
                 <VueSpinnerPacman size="20" :color="spinnerColor" />
             </div>
         </Transition>
-        <div ref="heatmapContainer" class="w-full h-full"></div>
+        <div ref="heatmapContainer" class="w-full h-full min-h-2.5 min-w-2.5"></div>
     </div>
 </template>
 

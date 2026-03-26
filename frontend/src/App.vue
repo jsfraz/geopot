@@ -73,47 +73,49 @@ useWebSocket(websocketUrl,
 </script>
 
 <template>
-  <div class="flex flex-col h-screen">
+  <div class="flex flex-col min-h-screen xl:min-h-200 xl:h-screen xl:overflow-hidden">
     <!-- Stat cards -->
-    <div class="w-full h-1/6 flex p-4 gap-4">
-      <!-- Total connections -->
-      <div class="flex-1">
-        <StatCard ref="totalConnectionsCard" :title="'Total connections'"
-          :observableNumber="statsApi.getTotalConnectionCount()" />
+    <div class="w-full xl:h-1/6 flex flex-col xl:flex-row p-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-1 gap-4">
+        <!-- Total connections -->
+        <div class="flex-1">
+          <StatCard ref="totalConnectionsCard" :title="'Total connections'"
+            :observableNumber="statsApi.getTotalConnectionCount()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'"
+            :observableStrings="statsApi.getAllUniqueIPAddresses()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'"
+            :observableStrings="statsApi.getAllUniqueCountries()" />
+        </div>
+        <div class="flex-1">
+          <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'"
+            :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
+        </div>
       </div>
-      <div class="flex-1">
-        <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'"
-          :observableStrings="statsApi.getAllUniqueIPAddresses()" />
-      </div>
-      <div class="flex-1">
-        <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'"
-          :observableStrings="statsApi.getAllUniqueCountries()" />
-      </div>
-      <div class="flex-1">
-        <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'"
-          :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
-      </div>
-      <div class="w-2/7">
+      <div class="w-full xl:w-2/7">
         <ServerInfoCard :apiConfiguration="apiConfig" />
       </div>
     </div>
     <!-- Something and globe -->
-    <div class="w-full h-2/5 flex px-4 gap-4">
+    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 gap-4 mt-4 xl:mt-0">
       <!-- Something -->
-      <div class="w-5/7">
+      <div class="hidden xl:block xl:w-5/7">
       </div>
       <!-- Globe -->
-      <div class="w-2/7">
+      <div class="w-full xl:w-2/7 h-72 xl:h-auto">
         <Globe :apiConfiguration="apiConfig" ref="globe" />
       </div>
     </div>
     <!-- Something and heatmap -->
-    <div class="w-full h-2/5 flex px-4 p-4 gap-4">
+    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 p-4 gap-4">
       <!-- Something -->
-      <div class="w-5/7">
+      <div class="hidden xl:block xl:w-5/7">
       </div>
       <!-- Heatmap -->
-      <div class="w-2/7">
+      <div class="w-full xl:w-2/7 h-72 xl:h-auto">
         <Heatmap :apiConfiguration="apiConfig" ref="heatmap" />
       </div>
     </div>

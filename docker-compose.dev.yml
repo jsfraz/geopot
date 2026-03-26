@@ -8,46 +8,19 @@ services:
     environment:
       - POSTGRES_DB=geopot
       - POSTGRES_USER=geopot
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_PASSWORD=12345678
       - PGDATA=/pgdata
     volumes:
       - timescaledb_data:/pgdata
-    restart: always
+    # restart: always
 
   geopot-valkey:
     image: valkey/valkey:latest
     container_name: geopot-valkey
-    command: /bin/sh -c "redis-server --requirepass ${VALKEY_PASSWORD}"
+    command: /bin/sh -c "redis-server --requirepass 12345678"
     volumes:
       - valkey_data:/data
-    restart: always
-
-  geopot:
-    build: .
-    image: geopot
-    container_name: geopot
-    depends_on:
-      - geopot-timescaledb
-      - geopot-valkey
-    environment:
-      - POSTGRES_USER=geopot
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_SERVER=geopot-timescaledb
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=geopot
-      - VALKEY_PASSWORD=${VALKEY_PASSWORD}
-      - VALKEY_SERVER=geopot-valkey
-      - VALKEY_PORT=6379
-    ports:
-      - "22:2222"
-      - "80:8080"
-    volumes:
-      - ./geopot/private_key.pem:/app/private_key.pem
-    restart: always
-
-networks:
-  geopot:
-    name: geopot
+    # restart: always
 
 volumes:
   timescaledb_data:

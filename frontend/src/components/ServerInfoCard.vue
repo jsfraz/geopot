@@ -43,11 +43,12 @@ onMounted(() => {
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
-        <div>
+        <div class="h-full">
             <div
-                class="border-1 border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full">
+                class="border border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full w-full">
                 <p class="text-2xl font-bold text-white">{{ value ? value.ipAddress : '' }}</p>
-                <p class="text-xl font-bold text-white">{{ value ? value.cityName + ' - ' + value.countryName : '' }}</p>
+                <p class="text-xl font-bold text-white">{{ value ? value.cityName + ' - ' + value.countryName : '' }}
+                </p>
                 <p class="text-xl font-bold text-white">{{ value ? value.regionName : '' }}</p>
             </div>
         </div>
