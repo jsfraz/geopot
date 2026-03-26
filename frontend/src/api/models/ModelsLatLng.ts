@@ -20,10 +20,15 @@ export interface ModelsLatLng {
      * @type {number}
      * @memberof ModelsLatLng
      */
-    latitude: number;
+    intensity?: number;
     /**
      * @type {number}
      * @memberof ModelsLatLng
      */
-    longitude: number;
+    latitude?: number;
+    /**
+     * @type {number}
+     * @memberof ModelsLatLng
+     */
+    longitude?: number;
 }

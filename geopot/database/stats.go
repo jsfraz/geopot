@@ -63,7 +63,11 @@ func GetLast24HourConnections() (int64, error) {
 //	@return error
 func GetAllLatLngs() ([]models.LatLng, error) {
 	var latLngs []models.LatLng
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("latitude, longitude").Where("latitude != 0 AND longitude != 0").Find(&latLngs).Error
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
+		Select("ROUND(latitude::numeric, 1) AS latitude, ROUND(longitude::numeric, 1) AS longitude, COUNT(*) AS intensity").
+		Where("latitude != 0 AND longitude != 0").
+		Group("1, 2").
+		Find(&latLngs).Error
 	if err != nil {
 		return nil, err
 	}

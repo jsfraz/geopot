@@ -28,10 +28,11 @@ onMounted(() => {
     if (heatmapContainer.value) {
         // Map initialization
         heat = (L as any).heatLayer([], {
-            radius: 25,
-            blur: 15,
+            radius: 35,
+            blur: 20,
             maxZoom: 15,
-            minOpacity: 0.4
+            minOpacity: 0.1,
+            max: 1.0 // This will be adjusted based on data
         });
 
         // Prevents the leaflet-heat component from crashing if it attempts to redraw the heatmap when the window is minimized to the point where the height or width of the div is 0
@@ -60,7 +61,17 @@ onMounted(() => {
                 new StatsApi(props.apiConfiguration).getAllLatLng().subscribe({
                     next: (data: ModelsLatLng[]) => {
                         if (data.length > 0) {
-                            const points = data.map(item => [item.latitude, item.longitude, 1] as [number, number, number]);
+                            // Find max intensity for normalization
+                            const maxIntensity = Math.max(...data.map(d => d.intensity || 1));
+                            // Set max much lower than peak to make "hot" zones redder
+                            heat.setOptions({
+                                max: maxIntensity * 0.5,
+                                radius: 25,
+                                blur: 10,
+                                minOpacity: 0.3
+                            });
+
+                            const points = data.map(item => [item.latitude, item.longitude, item.intensity || 1] as [number, number, number]);
                             heat.setLatLngs(points);
                         }
                     },
