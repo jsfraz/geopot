@@ -148,7 +148,7 @@ onMounted(() => {
                                 globe!.pointOfView({
                                     lat: serverMarkerData.lat,
                                     lng: serverMarkerData.lng,
-                                    altitude: 2.5
+                                    altitude: 1.75
                                 }, 2500);
                             },
                             error: (error) => {

@@ -50,7 +50,7 @@ onMounted(() => {
             zoom: 1,
             minZoom: 1,
             maxZoom: 15,
-            center: L.latLng(44.33, 10.5),
+            center: L.latLng(25, 10.5),
             layers: [
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
                 heat
