@@ -14,13 +14,34 @@
 import type { Observable } from 'rxjs';
 import type { AjaxResponse } from 'rxjs/ajax';
 import { BaseAPI } from '../runtime';
-import type { OperationOpts } from '../runtime';
+import type { OperationOpts, HttpQuery } from '../runtime';
 import type {
     ModelsConnection,
+    ModelsHourlyStat,
     ModelsLatLng,
     ModelsNumberValue,
-    ModelsStringsValue,
+    ModelsTopEntry,
 } from '../models';
+
+export interface GetHourlyStatsRequest {
+    hours?: number;
+}
+
+export interface GetRecentConnectionsRequest {
+    limit?: number;
+}
+
+export interface GetTopCountriesRequest {
+    limit?: number;
+}
+
+export interface GetTopPasswordsRequest {
+    limit?: number;
+}
+
+export interface GetTopUsernamesRequest {
+    limit?: number;
+}
 
 /**
  * no description
@@ -41,28 +62,21 @@ export class StatsApi extends BaseAPI {
     };
 
     /**
-     * Get all unique countries
-     * All unique countries
+     * Get connection counts per hour for the last N hours
+     * Hourly Stats
      */
-    getAllUniqueCountries(): Observable<ModelsStringsValue>
-    getAllUniqueCountries(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
-    getAllUniqueCountries(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
-        return this.request<ModelsStringsValue>({
-            url: '/api/stats/allUniqueCountries',
-            method: 'GET',
-        }, opts?.responseOpts);
-    };
+    getHourlyStats({ hours }: GetHourlyStatsRequest): Observable<Array<ModelsHourlyStat>>
+    getHourlyStats({ hours }: GetHourlyStatsRequest, opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsHourlyStat>>>
+    getHourlyStats({ hours }: GetHourlyStatsRequest, opts?: OperationOpts): Observable<Array<ModelsHourlyStat> | AjaxResponse<Array<ModelsHourlyStat>>> {
 
-    /**
-     * Get all unique IP addresses
-     * All unique IP addresses
-     */
-    getAllUniqueIPAddresses(): Observable<ModelsStringsValue>
-    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
-    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
-        return this.request<ModelsStringsValue>({
-            url: '/api/stats/allUniqueIps',
+        const query: HttpQuery = {};
+
+        if (hours != null) { query['hours'] = hours; }
+
+        return this.request<Array<ModelsHourlyStat>>({
+            url: '/api/stats/hourly',
             method: 'GET',
+            query,
         }, opts?.responseOpts);
     };
 
@@ -80,6 +94,25 @@ export class StatsApi extends BaseAPI {
     };
 
     /**
+     * Get the N most recent connection attempts
+     * Recent Connections
+     */
+    getRecentConnections({ limit }: GetRecentConnectionsRequest): Observable<Array<ModelsConnection>>
+    getRecentConnections({ limit }: GetRecentConnectionsRequest, opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsConnection>>>
+    getRecentConnections({ limit }: GetRecentConnectionsRequest, opts?: OperationOpts): Observable<Array<ModelsConnection> | AjaxResponse<Array<ModelsConnection>>> {
+
+        const query: HttpQuery = {};
+
+        if (limit != null) { query['limit'] = limit; }
+
+        return this.request<Array<ModelsConnection>>({
+            url: '/api/stats/recentConnections',
+            method: 'GET',
+            query,
+        }, opts?.responseOpts);
+    };
+
+    /**
      * Get the server\'s own info
      * Self Info
      */
@@ -93,6 +126,63 @@ export class StatsApi extends BaseAPI {
     };
 
     /**
+     * Get top N countries by connection count
+     * Top Countries
+     */
+    getTopCountries({ limit }: GetTopCountriesRequest): Observable<Array<ModelsTopEntry>>
+    getTopCountries({ limit }: GetTopCountriesRequest, opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsTopEntry>>>
+    getTopCountries({ limit }: GetTopCountriesRequest, opts?: OperationOpts): Observable<Array<ModelsTopEntry> | AjaxResponse<Array<ModelsTopEntry>>> {
+
+        const query: HttpQuery = {};
+
+        if (limit != null) { query['limit'] = limit; }
+
+        return this.request<Array<ModelsTopEntry>>({
+            url: '/api/stats/topCountries',
+            method: 'GET',
+            query,
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get top N passwords by usage count
+     * Top Passwords
+     */
+    getTopPasswords({ limit }: GetTopPasswordsRequest): Observable<Array<ModelsTopEntry>>
+    getTopPasswords({ limit }: GetTopPasswordsRequest, opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsTopEntry>>>
+    getTopPasswords({ limit }: GetTopPasswordsRequest, opts?: OperationOpts): Observable<Array<ModelsTopEntry> | AjaxResponse<Array<ModelsTopEntry>>> {
+
+        const query: HttpQuery = {};
+
+        if (limit != null) { query['limit'] = limit; }
+
+        return this.request<Array<ModelsTopEntry>>({
+            url: '/api/stats/topPasswords',
+            method: 'GET',
+            query,
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get top N usernames by usage count
+     * Top Usernames
+     */
+    getTopUsernames({ limit }: GetTopUsernamesRequest): Observable<Array<ModelsTopEntry>>
+    getTopUsernames({ limit }: GetTopUsernamesRequest, opts?: OperationOpts): Observable<AjaxResponse<Array<ModelsTopEntry>>>
+    getTopUsernames({ limit }: GetTopUsernamesRequest, opts?: OperationOpts): Observable<Array<ModelsTopEntry> | AjaxResponse<Array<ModelsTopEntry>>> {
+
+        const query: HttpQuery = {};
+
+        if (limit != null) { query['limit'] = limit; }
+
+        return this.request<Array<ModelsTopEntry>>({
+            url: '/api/stats/topUsernames',
+            method: 'GET',
+            query,
+        }, opts?.responseOpts);
+    };
+
+    /**
      * Get total connection count
      * Total connection count
      */
@@ -101,6 +191,32 @@ export class StatsApi extends BaseAPI {
     getTotalConnectionCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
         return this.request<ModelsNumberValue>({
             url: '/api/stats/totalConnections',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get count of unique countries
+     * Unique Countries Count
+     */
+    getUniqueCountryCount(): Observable<ModelsNumberValue>
+    getUniqueCountryCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getUniqueCountryCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/uniqueCountryCount',
+            method: 'GET',
+        }, opts?.responseOpts);
+    };
+
+    /**
+     * Get count of unique IP addresses
+     * Unique IP Address Count
+     */
+    getUniqueIPCount(): Observable<ModelsNumberValue>
+    getUniqueIPCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getUniqueIPCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/uniqueIpCount',
             method: 'GET',
         }, opts?.responseOpts);
     };

@@ -50,7 +50,7 @@ onMounted(() => {
             zoom: 1,
             minZoom: 1,
             maxZoom: 15,
-            center: L.latLng(44.33, 10.5),
+            center: L.latLng(25, 10.5),
             layers: [
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
                 heat
@@ -98,7 +98,7 @@ function addPoint(lat: number, lng: number) {
 </script>
 
 <template>
-    <div class="border border-hacker bg-hackerbg rounded-lg relative w-full h-full overflow-hidden min-h-2.5 min-w-2.5">
+    <div class="hud-card relative w-full h-full overflow-hidden rounded-sm min-h-2.5 min-w-2.5">
         <Transition name="fade">
             <div v-if="!isHeatmapLoaded"
                 class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">

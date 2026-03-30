@@ -3,6 +3,10 @@ import { useWebSocket } from '@vueuse/core';
 import Globe from './components/Globe.vue';
 import Heatmap from './components/Heatmap.vue';
 import StatCard from './components/StatCard.vue';
+import ConnectionsChart from './components/ConnectionsChart.vue';
+import TopCountriesChart from './components/TopCountriesChart.vue';
+import CredentialsTable from './components/CredentialsTable.vue';
+import LiveFeed from './components/LiveFeed.vue';
 import { Configuration, StatsApi } from './api';
 import { ref } from 'vue';
 import type { ModelsConnection } from './api/models/ModelsConnection';
@@ -14,6 +18,8 @@ const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.
 const globe = ref<InstanceType<typeof Globe> | null>(null);
 // Heatmap component
 const heatmap = ref<InstanceType<typeof Heatmap> | null>(null);
+// LiveFeed component
+const liveFeed = ref<InstanceType<typeof LiveFeed> | null>(null);
 // API client config and instances
 const apiConfig = new Configuration({
   basePath: import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin,
@@ -67,31 +73,36 @@ useWebSocket(websocketUrl,
       if (heatmap.value && msg.latitude != 0 && msg.longitude != 0) {
         heatmap.value.addPoint(msg.latitude, msg.longitude);
       }
+      // Add entry to live feed
+      if (liveFeed.value) {
+        liveFeed.value.addEntry(msg);
+      }
     },
   }
 );
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen xl:min-h-200 xl:h-screen xl:overflow-hidden">
-    <!-- Stat cards -->
-    <div class="w-full xl:h-1/6 flex flex-col xl:flex-row p-4 gap-4">
+  <div
+    class="flex flex-col min-h-screen xl:h-screen xl:overflow-hidden bg-hackerbg font-mono selection:bg-hacker/30 selection:text-white">
+    <!-- Header/Stat cards row -->
+    <div class="w-full xl:h-[18%] flex flex-col xl:flex-row p-4 gap-4 shrink-0">
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-1 gap-4">
         <!-- Total connections -->
         <div class="flex-1">
-          <StatCard ref="totalConnectionsCard" :title="'Total connections'"
+          <StatCard ref="totalConnectionsCard" title="Total Connections"
             :observableNumber="statsApi.getTotalConnectionCount()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="totalUniqueIpsCard" :title="'Unique IPs'"
-            :observableStrings="statsApi.getAllUniqueIPAddresses()" />
+          <StatCard ref="totalUniqueIpsCard" title="Unique IPs"
+            :observableNumber="statsApi.getUniqueIPCount()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="totalUniqueCountriesCard" :title="'Unique countries'"
-            :observableStrings="statsApi.getAllUniqueCountries()" />
+          <StatCard ref="totalUniqueCountriesCard" title="Unique Countries"
+            :observableNumber="statsApi.getUniqueCountryCount()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="last24HourConnectionsCard" :title="'Last 24 hours'"
+          <StatCard ref="last24HourConnectionsCard" title="Last 24H"
             :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
         </div>
       </div>
@@ -99,20 +110,35 @@ useWebSocket(websocketUrl,
         <ServerInfoCard :apiConfiguration="apiConfig" />
       </div>
     </div>
-    <!-- Something and globe -->
-    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 gap-4 mt-4 xl:mt-0">
-      <!-- Something -->
-      <div class="hidden xl:block xl:w-5/7">
+
+    <!-- Row 2: Connections chart + Globe -->
+    <div class="w-full xl:h-[41%] flex flex-col xl:flex-row px-4 gap-4 mt-0 shrink-0">
+      <!-- Connections over time -->
+      <div class="w-full xl:flex-1 h-64 xl:h-auto">
+        <ConnectionsChart :apiConfiguration="apiConfig" />
       </div>
       <!-- Globe -->
       <div class="w-full xl:w-2/7 h-72 xl:h-auto">
         <Globe :apiConfiguration="apiConfig" ref="globe" />
       </div>
     </div>
-    <!-- Something and heatmap -->
-    <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 p-4 gap-4">
-      <!-- Something -->
-      <div class="hidden xl:block xl:w-5/7">
+
+    <!-- Row 3: Bottom panels + Heatmap -->
+    <div class="w-full xl:h-[41%] flex flex-col xl:flex-row px-4 pt-0 pb-4 gap-4 mt-4">
+      <!-- Left: Countries + LiveFeed + Credentials -->
+      <div class="w-full xl:flex-1 flex flex-col xl:flex-row gap-4 h-full">
+        <!-- Top Countries -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <TopCountriesChart :apiConfiguration="apiConfig" :limit="12" />
+        </div>
+        <!-- Live Feed -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <LiveFeed :apiConfiguration="apiConfig" ref="liveFeed" />
+        </div>
+        <!-- Credentials Table -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <CredentialsTable :apiConfiguration="apiConfig" />
+        </div>
       </div>
       <!-- Heatmap -->
       <div class="w-full xl:w-2/7 h-72 xl:h-auto">

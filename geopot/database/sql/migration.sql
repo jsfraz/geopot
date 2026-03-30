@@ -60,3 +60,57 @@ SELECT add_continuous_aggregate_policy('stats_hourly',
     end_offset => INTERVAL '1 hour',
     schedule_interval => INTERVAL '1 hour',
     if_not_exists => TRUE);
+
+-- Continuous Aggregates for Top Countries (hourly)
+CREATE MATERIALIZED VIEW IF NOT EXISTS stats_country_hourly
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('1 hour', "timestamp") AS bucket,
+    country_name,
+    COUNT(*) AS connection_count
+FROM connections
+WHERE country_name != ''
+GROUP BY bucket, country_name
+WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('stats_country_hourly',
+    start_offset => INTERVAL '3 hours',
+    end_offset => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '1 hour',
+    if_not_exists => TRUE);
+
+-- Continuous Aggregates for Top Usernames (hourly)
+CREATE MATERIALIZED VIEW IF NOT EXISTS stats_user_hourly
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('1 hour', "timestamp") AS bucket,
+    "user",
+    COUNT(*) AS connection_count
+FROM connections
+WHERE "user" != ''
+GROUP BY bucket, "user"
+WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('stats_user_hourly',
+    start_offset => INTERVAL '3 hours',
+    end_offset => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '1 hour',
+    if_not_exists => TRUE);
+
+-- Continuous Aggregates for Top Passwords (hourly)
+CREATE MATERIALIZED VIEW IF NOT EXISTS stats_password_hourly
+WITH (timescaledb.continuous) AS
+SELECT 
+    time_bucket('1 hour', "timestamp") AS bucket,
+    password,
+    COUNT(*) AS connection_count
+FROM connections
+WHERE password != ''
+GROUP BY bucket, password
+WITH NO DATA;
+
+SELECT add_continuous_aggregate_policy('stats_password_hourly',
+    start_offset => INTERVAL '3 hours',
+    end_offset => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '1 hour',
+    if_not_exists => TRUE);

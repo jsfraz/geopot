@@ -28,28 +28,28 @@ func StatsRoute(g *fizz.RouterGroup) {
 		tonic.Handler(handlers.GetTotalConnectionCount, http.StatusOK),
 	)
 
-	// All unique IPs
-	grp.GET("allUniqueIps",
+	// Unique IPs count
+	grp.GET("uniqueIpCount",
 		utils.CreateOperationOption(
-			"All unique IP addresses",
-			"Get all unique IP addresses",
+			"Unique IP Address Count",
+			"Get count of unique IP addresses",
 			[]int{
 				http.StatusBadRequest,
 				http.StatusInternalServerError,
 			}),
-		tonic.Handler(handlers.GetAllUniqueIPAddresses, http.StatusOK),
+		tonic.Handler(handlers.GetUniqueIPCount, http.StatusOK),
 	)
 
-	// All unique countries
-	grp.GET("allUniqueCountries",
+	// Unique countries count
+	grp.GET("uniqueCountryCount",
 		utils.CreateOperationOption(
-			"All unique countries",
-			"Get all unique countries",
+			"Unique Countries Count",
+			"Get count of unique countries",
 			[]int{
 				http.StatusBadRequest,
 				http.StatusInternalServerError,
 			}),
-		tonic.Handler(handlers.GetAllUniqueCountries, http.StatusOK),
+		tonic.Handler(handlers.GetUniqueCountryCount, http.StatusOK),
 	)
 
 	// Get the number of connections in the last 24 hours.
@@ -86,5 +86,65 @@ func StatsRoute(g *fizz.RouterGroup) {
 				http.StatusInternalServerError,
 			}),
 		tonic.Handler(handlers.GetAllLatLng, http.StatusOK),
+	)
+
+	// Get hourly connection stats (uses stats_hourly CA).
+	grp.GET("hourly",
+		utils.CreateOperationOption(
+			"Hourly Stats",
+			"Get connection counts per hour for the last N hours",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetHourlyStats, http.StatusOK),
+	)
+
+	// Get top countries.
+	grp.GET("topCountries",
+		utils.CreateOperationOption(
+			"Top Countries",
+			"Get top N countries by connection count",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetTopCountries, http.StatusOK),
+	)
+
+	// Get top usernames.
+	grp.GET("topUsernames",
+		utils.CreateOperationOption(
+			"Top Usernames",
+			"Get top N usernames by usage count",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetTopUsernames, http.StatusOK),
+	)
+
+	// Get top passwords.
+	grp.GET("topPasswords",
+		utils.CreateOperationOption(
+			"Top Passwords",
+			"Get top N passwords by usage count",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetTopPasswords, http.StatusOK),
+	)
+
+	// Get recent connections.
+	grp.GET("recentConnections",
+		utils.CreateOperationOption(
+			"Recent Connections",
+			"Get the N most recent connection attempts",
+			[]int{
+				http.StatusBadRequest,
+				http.StatusInternalServerError,
+			}),
+		tonic.Handler(handlers.GetRecentConnections, http.StatusOK),
 	)
 }
