@@ -101,7 +101,7 @@ onMounted(() => {
         <div
             class="grid grid-cols-[75px_50px_140px_1fr_1fr] gap-x-2 px-3 py-1.5 shrink-0 text-hacker/60 font-mono text-[10px] uppercase tracking-widest border-b border-hacker/20 bg-hacker/5">
             <span>Time</span>
-            <span>Cc</span>
+            <span>Origin</span>
             <span>IP Address</span>
             <span>User</span>
             <span>Pass</span>

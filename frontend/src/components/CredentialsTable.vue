@@ -53,7 +53,7 @@ onMounted(() => {
                         <tr class="text-hacker/60 border-b border-hacker/20 uppercase text-[10px]">
                             <th class="text-left pb-1.5 pr-2 font-normal">#</th>
                             <th class="text-left pb-1.5 pr-2 font-normal">User</th>
-                            <th class="text-right pb-1.5 pr-2 font-normal">Hits</th>
+                            <th class="text-right pb-1.5 pr-2 font-normal">Total</th>
                             <th class="text-right pb-1.5 font-normal">%</th>
                         </tr>
                     </thead>
@@ -83,7 +83,7 @@ onMounted(() => {
                         <tr class="text-danger/60 border-b border-danger/20 uppercase text-[10px]">
                             <th class="text-left pb-1.5 pr-2 font-normal">#</th>
                             <th class="text-left pb-1.5 pr-2 font-normal">Pass</th>
-                            <th class="text-right pb-1.5 pr-2 font-normal">Hits</th>
+                            <th class="text-right pb-1.5 pr-2 font-normal">Total</th>
                             <th class="text-right pb-1.5 font-normal">%</th>
                         </tr>
                     </thead>
