@@ -34,25 +34,25 @@ export class StatsApi extends BaseAPI {
     };
 
     /**
-     * Get all unique countries
+     * Get count of unique countries
      */
-    getAllUniqueCountries(): Observable<ModelsStringsValue>
-    getAllUniqueCountries(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
-    getAllUniqueCountries(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
-        return this.request<ModelsStringsValue>({
-            url: '/api/stats/allUniqueCountries',
+    getUniqueCountryCount(): Observable<ModelsNumberValue>
+    getUniqueCountryCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getUniqueCountryCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/uniqueCountryCount',
             method: 'GET',
         }, opts?.responseOpts);
     };
 
     /**
-     * Get all unique IP addresses
+     * Get count of unique IP addresses
      */
-    getAllUniqueIPAddresses(): Observable<ModelsStringsValue>
-    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<AjaxResponse<ModelsStringsValue>>
-    getAllUniqueIPAddresses(opts?: OperationOpts): Observable<ModelsStringsValue | AjaxResponse<ModelsStringsValue>> {
-        return this.request<ModelsStringsValue>({
-            url: '/api/stats/allUniqueIps',
+    getUniqueIPCount(): Observable<ModelsNumberValue>
+    getUniqueIPCount(opts?: OperationOpts): Observable<AjaxResponse<ModelsNumberValue>>
+    getUniqueIPCount(opts?: OperationOpts): Observable<ModelsNumberValue | AjaxResponse<ModelsNumberValue>> {
+        return this.request<ModelsNumberValue>({
+            url: '/api/stats/uniqueIpCount',
             method: 'GET',
         }, opts?.responseOpts);
     };

@@ -95,11 +95,11 @@ useWebSocket(websocketUrl,
         </div>
         <div class="flex-1">
           <StatCard ref="totalUniqueIpsCard" title="Unique IPs"
-            :observableStrings="statsApi.getAllUniqueIPAddresses()" />
+            :observableNumber="statsApi.getUniqueIPCount()" />
         </div>
         <div class="flex-1">
           <StatCard ref="totalUniqueCountriesCard" title="Unique Countries"
-            :observableStrings="statsApi.getAllUniqueCountries()" />
+            :observableNumber="statsApi.getUniqueCountryCount()" />
         </div>
         <div class="flex-1">
           <StatCard ref="last24HourConnectionsCard" title="Last 24H"

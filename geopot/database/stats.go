@@ -21,30 +21,30 @@ func GetTotalConnectionCount() (int64, error) {
 	return count, nil
 }
 
-// Get all unique IP addresses stored in the database.
+// Get the count of all unique IP addresses stored in the database.
 //
-//	@return []string
+//	@return int64
 //	@return error
-func GetAllUniqueIPAddresses() ([]string, error) {
-	var ips []string
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Distinct("ip_address").Pluck("ip_address", &ips).Error
+func GetUniqueIPCount() (int64, error) {
+	var count int64
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("COUNT(DISTINCT ip_address)").Scan(&count).Error
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return ips, nil
+	return count, nil
 }
 
-// Get all unique countries stored in the database.
+// Get the count of all unique countries stored in the database.
 //
-//	@return []string
+//	@return int64
 //	@return error
-func GetAllUniqueCountries() ([]string, error) {
-	var countries []string
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Distinct("country_name").Where("country_name != ''").Pluck("country_name", &countries).Error
+func GetUniqueCountryCount() (int64, error) {
+	var count int64
+	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Where("country_name != ''").Select("COUNT(DISTINCT country_name)").Scan(&count).Error
 	if err != nil {
-		return nil, err
+		return 0, err
 	}
-	return countries, nil
+	return count, nil
 }
 
 // Get the number of connections in the last 24 hours.
@@ -112,8 +112,8 @@ func GetTopCountries(limit int) ([]models.TopEntry, error) {
 		Count int64
 	}
 	var rows []row
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
-		Select("country_name AS label, COUNT(*) AS count").
+	err := utils.GetSingleton().Postgres.Table("stats_country_hourly").
+		Select("country_name AS label, SUM(connection_count) AS count").
 		Where("country_name != ''").
 		Group("country_name").
 		Order("count DESC").
@@ -151,8 +151,8 @@ func GetTopUsernames(limit int) ([]models.TopEntry, error) {
 		Count int64
 	}
 	var rows []row
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
-		Select(`"user" AS label, COUNT(*) AS count`).
+	err := utils.GetSingleton().Postgres.Table("stats_user_hourly").
+		Select(`"user" AS label, SUM(connection_count) AS count`).
 		Where(`"user" != ''`).
 		Group(`"user"`).
 		Order("count DESC").
@@ -189,8 +189,8 @@ func GetTopPasswords(limit int) ([]models.TopEntry, error) {
 		Count int64
 	}
 	var rows []row
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
-		Select("password AS label, COUNT(*) AS count").
+	err := utils.GetSingleton().Postgres.Table("stats_password_hourly").
+		Select("password AS label, SUM(connection_count) AS count").
 		Where("password != ''").
 		Group("password").
 		Order("count DESC").

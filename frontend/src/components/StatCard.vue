@@ -9,7 +9,6 @@ const props = defineProps({
     spinnerColor: { type: String, default: '#20c20e' },
     title: { type: String, default: 'Stat Card' },
     observableNumber: { type: Observable<ModelsNumberValue>, default: null },
-    observableStrings: { type: Observable<ModelsStringsValue>, default: null },
     refreshInterval: { type: Number, default: null },
 });
 
@@ -22,17 +21,13 @@ defineExpose({
 // Loading state and values
 const isLoaded = ref(false);
 const value = ref(0);
-const stringsValue = ref([] as string[]);
+// Session tracking for unique strings (used by increaseStringsValue)
+const sessionSeenStrings = new Set<string>();
 let intervalId: number | null = null;
 
 onMounted(() => {
-    // Observable validation
-    if (props.observableNumber && props.observableStrings) {
-        console.error('StatCard "' + props.title + '": Both observableNumber and observableStrings props are set. Please provide only one.');
-        return;
-    }
-    if (!props.observableNumber && !props.observableStrings) {
-        console.error('StatCard "' + props.title + '": Neither observableNumber nor observableStrings prop is set. Please provide one.');
+    if (!props.observableNumber) {
+        console.error('StatCard "' + props.title + '": observableNumber prop is required.');
         return;
     }
     // Set up refresh interval if provided
@@ -65,29 +60,12 @@ function loadObservables() {
         props.observableNumber.subscribe({
             next: (data) => {
                 console.log('StatCard "' + props.title + '" data received:', data);
+                // Value from backend.
+                // We do NOT clear sessionSeenStrings here because it tracks what we have seen
+                // live from the WebSocket. In a more complex scenario, we might want to reconcile.
                 value.value = data.value;
             },
             error: (error) => {
-                // TODO show error state
-                console.error('Error loading StatCard "' + props.title + '" data:', error);
-                isLoaded.value = true;
-            },
-            complete: () => {
-                isLoaded.value = true;
-            }
-        });
-    }
-
-    // Load data from observable - result is array of strings
-    if (props.observableStrings) {
-        props.observableStrings.subscribe({
-            next: (data) => {
-                console.log('StatCard "' + props.title + '" data received:', data);
-                stringsValue.value = data.value;
-                value.value = data.value.length;
-            },
-            error: (error) => {
-                // TODO show error state
                 console.error('Error loading StatCard "' + props.title + '" data:', error);
                 isLoaded.value = true;
             },
@@ -105,12 +83,12 @@ function increaseNumberValue() {
     value.value += 1;
 }
 
-// Increases strings value by adding new string if not exists and increases number value
+// Increases strings value by adding new string if not exists (in session) and increases number value
 function increaseStringsValue(newString: string) {
     if (!isLoaded.value) return;
 
-    if (!stringsValue.value.includes(newString)) {
-        stringsValue.value.push(newString);
+    if (!sessionSeenStrings.has(newString)) {
+        sessionSeenStrings.add(newString);
         increaseNumberValue();
     }
 }

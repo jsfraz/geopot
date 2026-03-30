@@ -54,6 +54,9 @@ func SetupPostgres() {
 	log.Println("Refreshing continuous aggregates (this may take a moment on first run)...")
 	postgres.Exec("CALL refresh_continuous_aggregate('heatmap_1h', NULL, NULL)")
 	postgres.Exec("CALL refresh_continuous_aggregate('stats_hourly', NULL, NULL)")
+	postgres.Exec("CALL refresh_continuous_aggregate('stats_country_hourly', NULL, NULL)")
+	postgres.Exec("CALL refresh_continuous_aggregate('stats_user_hourly', NULL, NULL)")
+	postgres.Exec("CALL refresh_continuous_aggregate('stats_password_hourly', NULL, NULL)")
 
 	// Set Postgres in singleton
 	utils.GetSingleton().Postgres = *postgres

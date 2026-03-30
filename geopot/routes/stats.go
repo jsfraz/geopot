@@ -28,28 +28,28 @@ func StatsRoute(g *fizz.RouterGroup) {
 		tonic.Handler(handlers.GetTotalConnectionCount, http.StatusOK),
 	)
 
-	// All unique IPs
-	grp.GET("allUniqueIps",
+	// Unique IPs count
+	grp.GET("uniqueIpCount",
 		utils.CreateOperationOption(
-			"All unique IP addresses",
-			"Get all unique IP addresses",
+			"Unique IP Address Count",
+			"Get count of unique IP addresses",
 			[]int{
 				http.StatusBadRequest,
 				http.StatusInternalServerError,
 			}),
-		tonic.Handler(handlers.GetAllUniqueIPAddresses, http.StatusOK),
+		tonic.Handler(handlers.GetUniqueIPCount, http.StatusOK),
 	)
 
-	// All unique countries
-	grp.GET("allUniqueCountries",
+	// Unique countries count
+	grp.GET("uniqueCountryCount",
 		utils.CreateOperationOption(
-			"All unique countries",
-			"Get all unique countries",
+			"Unique Countries Count",
+			"Get count of unique countries",
 			[]int{
 				http.StatusBadRequest,
 				http.StatusInternalServerError,
 			}),
-		tonic.Handler(handlers.GetAllUniqueCountries, http.StatusOK),
+		tonic.Handler(handlers.GetUniqueCountryCount, http.StatusOK),
 	)
 
 	// Get the number of connections in the last 24 hours.
