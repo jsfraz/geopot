@@ -117,18 +117,22 @@ function increaseStringsValue(newString: string) {
 </script>
 
 <template>
-    <div class="relative w-full h-full overflow-hidden">
+    <div class="relative w-full h-full">
         <Transition name="fade">
             <div v-if="!isLoaded"
-                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/33">
+                class="absolute top-0 left-0 w-full h-full flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
         <div class="h-full">
             <div
-                class="border border-hacker bg-hackerbg rounded-lg p-3 flex flex-col items-start justify-center h-full w-full">
-                <p class="text-base font-medium mb-2 uppercase text-gray-300">{{ title }}</p>
-                <p class="text-3xl font-bold text-white">{{ value.toLocaleString() }}</p>
+                class="hud-card p-5 flex flex-col items-start justify-center h-full w-full rounded-sm overflow-hidden">
+                <p class="text-[11px] font-bold mb-1.5 uppercase text-hacker/70 tracking-[0.2em] font-mono">{{ title }}</p>
+                <div class="flex items-baseline gap-2">
+                    <p class="text-4xl font-bold text-white glow-text-green tabular-nums tracking-tighter">{{ value.toLocaleString() }}</p>
+                </div>
+                <!-- Subtle decorative line -->
+                <div class="w-16 h-0.5 bg-hacker/30 mt-2"></div>
             </div>
         </div>
     </div>

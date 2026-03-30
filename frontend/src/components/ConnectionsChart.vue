@@ -21,54 +21,71 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
         type: 'area' as const,
         background: 'transparent',
         toolbar: { show: false },
-        animations: { enabled: true, speed: 400 },
+        animations: { enabled: true, speed: 800, animateGradually: { enabled: true } },
         zoom: { enabled: false },
+        dropShadow: {
+            enabled: true,
+            top: 0,
+            left: 0,
+            blur: 4,
+            color: '#39ff14',
+            opacity: 0.4
+        }
     },
     dataLabels: { enabled: false },
     stroke: {
-        curve: 'smooth',
-        width: 2,
-        colors: ['#20c20e'],
+        curve: 'smooth' as const,
+        width: 3.5,
+        colors: ['#39ff14'],
     },
     fill: {
-        type: 'gradient',
+        type: 'gradient' as const,
         gradient: {
             shadeIntensity: 1,
-            opacityFrom: 0.45,
-            opacityTo: 0.02,
+            opacityFrom: 0.5,
+            opacityTo: 0.05,
             stops: [0, 100],
             colorStops: [
-                { offset: 0, color: '#20c20e', opacity: 0.45 },
-                { offset: 100, color: '#20c20e', opacity: 0.02 },
+                { offset: 0, color: '#39ff14', opacity: 0.45 },
+                { offset: 100, color: '#39ff14', opacity: 0 },
             ],
         },
     },
     grid: {
-        borderColor: '#1a3a1a',
-        strokeDashArray: 3,
-        xaxis: { lines: { show: false } },
+        show: true,
+        borderColor: 'rgba(57, 255, 20, 0.08)',
+        strokeDashArray: 4,
+        xaxis: { lines: { show: true } },
+        yaxis: { lines: { show: false } },
     },
     xaxis: {
-        type: 'datetime',
+        type: 'datetime' as const,
         labels: {
-            style: { colors: '#5a8a5a', fontFamily: 'monospace', fontSize: '11px' },
+            style: { colors: '#5a8a5a', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '11px', fontWeight: 600 },
             datetimeUTC: false,
         },
-        axisBorder: { color: '#1a3a1a' },
-        axisTicks: { color: '#1a3a1a' },
+        axisBorder: { show: false },
+        axisTicks: { show: false },
     },
     yaxis: {
         labels: {
-            style: { colors: '#5a8a5a', fontFamily: 'monospace', fontSize: '11px' },
+            style: { colors: '#5a8a5a', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '11px', fontWeight: 600 },
             formatter: (val: number) => val.toLocaleString(),
         },
     },
     tooltip: {
         theme: 'dark',
         x: { format: 'HH:mm dd.MM' },
-        style: { fontFamily: 'monospace' },
+        style: { fontSize: '10px', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace' },
+        marker: { show: false },
     },
-    markers: { size: 0 },
+    markers: { 
+        size: 0,
+        colors: ['#20c20e'],
+        strokeColors: '#020d01',
+        strokeWidth: 2,
+        hover: { size: 4 }
+    },
     colors: ['#20c20e'],
 });
 
@@ -99,18 +116,20 @@ watch(activeRange, (v) => loadData(v));
 </script>
 
 <template>
-    <div class="border border-hacker bg-hackerbg rounded-lg relative w-full h-full flex flex-col overflow-hidden">
+    <div class="hud-card relative w-full h-full flex flex-col rounded-sm overflow-hidden p-2">
         <!-- Header -->
-        <div class="flex items-center justify-between px-3 pt-3 pb-1 shrink-0">
-            <p class="text-xs font-medium uppercase text-gray-400 tracking-widest font-mono">Connections over time</p>
-            <div class="flex gap-1">
+        <div class="flex items-center justify-between px-2 pt-2.5 pb-1.5 shrink-0 border-b border-hacker/20 mb-2 bg-hacker/5">
+            <p class="text-[11px] font-bold uppercase text-hacker tracking-[0.2em] font-mono italic">
+                <span class="mr-1 text-hacker">▶</span> Connections Timeline
+            </p>
+            <div class="flex gap-2">
                 <button v-for="h in [24, 168, 720]" :key="h"
                     @click="activeRange = h"
                     :class="[
-                        'text-xs px-2 py-0.5 rounded font-mono border transition-colors',
+                        'text-[10px] px-2.5 py-1 rounded-sm font-mono font-bold border transition-all duration-300',
                         activeRange === h
-                            ? 'border-hacker text-hacker bg-hacker/10'
-                            : 'border-gray-700 text-gray-500 hover:border-gray-500 hover:text-gray-300'
+                            ? 'border-hacker text-hacker bg-hacker/20 glow-text-green shadow-[0_0_15px_rgba(57,255,20,0.2)]'
+                            : 'border-white/10 text-gray-400 hover:border-hacker/40 hover:text-hacker/60'
                     ]">
                     {{ h === 24 ? '24H' : h === 168 ? '7D' : '30D' }}
                 </button>
@@ -119,7 +138,7 @@ watch(activeRange, (v) => loadData(v));
         <!-- Spinner -->
         <Transition name="fade">
             <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/30">
+                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>

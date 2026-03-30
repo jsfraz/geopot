@@ -22,13 +22,13 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
         type: 'bar' as const,
         background: 'transparent',
         toolbar: { show: false },
-        animations: { enabled: true, speed: 400 },
+        animations: { enabled: true, speed: 600 },
     },
     plotOptions: {
         bar: {
             horizontal: true,
-            borderRadius: 3,
-            barHeight: '65%',
+            borderRadius: 2,
+            barHeight: '60%',
             distributed: false,
         },
     },
@@ -38,27 +38,43 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
             const pct = entries.value[opts.dataPointIndex]?.percentage;
             return pct ? `${pct.toFixed(1)}%` : '';
         },
-        style: { fontFamily: 'monospace', fontSize: '11px', colors: ['#20c20e'] },
+        style: { fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '10px', fontWeight: 600, colors: ['#39ff14'] },
         offsetX: 5,
     },
-    colors: ['#20c20e'],
-    fill: { opacity: 0.85 },
+    colors: ['#39ff14'],
+    fill: { 
+        type: 'gradient' as const,
+        gradient: {
+            shade: 'dark',
+            type: "horizontal",
+            shadeIntensity: 0.5,
+            gradientToColors: ['#00ff00'],
+            inverseColors: true,
+            opacityFrom: 0.85,
+            opacityTo: 0.3,
+            stops: [0, 100]
+        }
+    },
     grid: {
-        borderColor: '#1a3a1a',
-        xaxis: { lines: { show: false } },
-        yaxis: { lines: { show: false } },
+        show: false,
     },
     xaxis: {
         categories: [] as string[],
         labels: {
-            style: { colors: '#5a8a5a', fontFamily: 'monospace', fontSize: '10px' },
+            style: { colors: '#5a8a5a', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '11px', fontWeight: 600 },
         },
-        axisBorder: { color: '#1a3a1a' },
+        axisBorder: { show: false },
         axisTicks: { show: false },
+    },
+    yaxis: {
+        labels: {
+            style: { colors: '#39ff14', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '12px', fontWeight: 700 },
+            maxWidth: 140,
+        },
     },
     tooltip: {
         theme: 'dark',
-        style: { fontFamily: 'monospace' },
+        style: { fontSize: '10px', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace' },
         y: { formatter: (val: number) => val.toLocaleString() },
     },
 });
@@ -88,13 +104,15 @@ onMounted(() => {
 </script>
 
 <template>
-    <div class="border border-hacker bg-hackerbg rounded-lg relative w-full h-full flex flex-col overflow-hidden">
-        <div class="px-3 pt-3 pb-1 shrink-0">
-            <p class="text-xs font-medium uppercase text-gray-400 tracking-widest font-mono">Top Countries</p>
+    <div class="hud-card relative w-full h-full flex flex-col rounded-sm overflow-hidden p-2">
+        <div class="px-2 pt-2.5 pb-1.5 shrink-0 border-b border-hacker/20 mb-2 bg-hacker/5">
+            <p class="text-[11px] font-bold uppercase text-hacker tracking-[0.2em] font-mono italic">
+                <span class="mr-1 text-hacker">▶</span> Top Attack Origins
+            </p>
         </div>
         <Transition name="fade">
             <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/30">
+                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
