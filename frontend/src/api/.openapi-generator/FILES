@@ -1,11 +1,13 @@
 .gitignore
+.openapi-generator-ignore
 apis/StatsApi.ts
 apis/index.ts
 index.ts
 models/ModelsConnection.ts
+models/ModelsHourlyStat.ts
 models/ModelsLatLng.ts
 models/ModelsNumberValue.ts
-models/ModelsStringsValue.ts
+models/ModelsTopEntry.ts
 models/index.ts
 runtime.ts
 servers.ts

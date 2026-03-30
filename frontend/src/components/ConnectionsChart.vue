@@ -79,7 +79,7 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
         style: { fontSize: '10px', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace' },
         marker: { show: false },
     },
-    markers: { 
+    markers: {
         size: 0,
         colors: ['#20c20e'],
         strokeColors: '#020d01',
@@ -91,13 +91,13 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
 
 function loadData(hours: number) {
     isLoaded.value = false;
-    new StatsApi(props.apiConfiguration).getHourlyStats(hours).subscribe({
+    new StatsApi(props.apiConfiguration).getHourlyStats({ hours: hours }).subscribe({
         next: (data: ModelsHourlyStat[]) => {
             series.value = [{
                 name: 'Connections',
                 data: data.map(d => ({
-                    x: new Date(d.bucket).getTime(),
-                    y: d.count,
+                    x: new Date(d.bucket ?? '').getTime(),
+                    y: d.count ?? 0,
                 })),
             }];
         },
@@ -118,43 +118,43 @@ watch(activeRange, (v) => loadData(v));
 <template>
     <div class="hud-card relative w-full h-full flex flex-col rounded-sm overflow-hidden p-2">
         <!-- Header -->
-        <div class="flex items-center justify-between px-2 pt-2.5 pb-1.5 shrink-0 border-b border-hacker/20 mb-2 bg-hacker/5">
+        <div
+            class="flex items-center justify-between px-2 pt-2.5 pb-1.5 shrink-0 border-b border-hacker/20 mb-2 bg-hacker/5">
             <p class="text-[11px] font-bold uppercase text-hacker tracking-[0.2em] font-mono italic">
                 <span class="mr-1 text-hacker">▶</span> Connections Timeline
             </p>
             <div class="flex gap-2">
-                <button v-for="h in [24, 168, 720]" :key="h"
-                    @click="activeRange = h"
-                    :class="[
-                        'text-[10px] px-2.5 py-1 rounded-sm font-mono font-bold border transition-all duration-300',
-                        activeRange === h
-                            ? 'border-hacker text-hacker bg-hacker/20 glow-text-green shadow-[0_0_15px_rgba(57,255,20,0.2)]'
-                            : 'border-white/10 text-gray-400 hover:border-hacker/40 hover:text-hacker/60'
-                    ]">
+                <button v-for="h in [24, 168, 720]" :key="h" @click="activeRange = h" :class="[
+                    'text-[10px] px-2.5 py-1 rounded-sm font-mono font-bold border transition-all duration-300',
+                    activeRange === h
+                        ? 'border-hacker text-hacker bg-hacker/20 glow-text-green shadow-[0_0_15px_rgba(57,255,20,0.2)]'
+                        : 'border-white/10 text-gray-400 hover:border-hacker/40 hover:text-hacker/60'
+                ]">
                     {{ h === 24 ? '24H' : h === 168 ? '7D' : '30D' }}
                 </button>
             </div>
         </div>
         <!-- Spinner -->
         <Transition name="fade">
-            <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
+            <div v-if="!isLoaded" class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
         <!-- Chart -->
         <div class="flex-1 min-h-0">
-            <VueApexCharts
-                type="area"
-                height="100%"
-                :options="chartOptions"
-                :series="series"
-            />
+            <VueApexCharts type="area" height="100%" :options="chartOptions" :series="series" />
         </div>
     </div>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>

@@ -80,7 +80,7 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
 });
 
 onMounted(() => {
-    new StatsApi(props.apiConfiguration).getTopCountries(props.limit).subscribe({
+    new StatsApi(props.apiConfiguration).getTopCountries({ limit: props.limit }).subscribe({
         next: (data: ModelsTopEntry[]) => {
             entries.value = data;
             // Reverse so top entry is at top of horizontal bar chart
@@ -89,10 +89,10 @@ onMounted(() => {
                 ...chartOptions.value,
                 xaxis: {
                     ...chartOptions.value.xaxis,
-                    categories: reversed.map(e => e.label),
+                    categories: reversed.map(e => e.label ?? ''),
                 },
             };
-            series.value = [{ data: reversed.map(e => e.count) }];
+            series.value = [{ data: reversed.map(e => e.count ?? 0) }];
         },
         error: (err) => {
             console.error('TopCountriesChart error:', err);

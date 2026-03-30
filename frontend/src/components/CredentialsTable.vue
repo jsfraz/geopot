@@ -21,12 +21,12 @@ onMounted(() => {
     let passsDone = false;
     const checkDone = () => { if (usersDone && passsDone) isLoaded.value = true; };
 
-    api.getTopUsernames(props.limit).subscribe({
+    api.getTopUsernames({ limit: props.limit }).subscribe({
         next: (data) => { usernames.value = data; },
         error: () => { usersDone = true; checkDone(); },
         complete: () => { usersDone = true; checkDone(); },
     });
-    api.getTopPasswords(props.limit).subscribe({
+    api.getTopPasswords({ limit: props.limit }).subscribe({
         next: (data) => { passwords.value = data; },
         error: () => { passsDone = true; checkDone(); },
         complete: () => { passsDone = true; checkDone(); },
@@ -63,8 +63,9 @@ onMounted(() => {
                             <td class="py-1.5 pr-2 text-gray-500 font-bold">{{ i + 1 }}</td>
                             <td class="py-1.5 pr-2 text-white font-medium">{{ entry.label }}</td>
                             <td class="py-1.5 pr-2 text-hacker/90 text-right tabular-nums font-bold">{{
-                                entry.count.toLocaleString() }}</td>
-                            <td class="py-1.5 text-hacker/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%
+                                (entry.count ?? 0).toLocaleString() }}</td>
+                            <td class="py-1.5 text-hacker/60 text-right tabular-nums">{{ (entry.percentage ??
+                                0).toFixed(1) }}%
                             </td>
                         </tr>
                     </tbody>
@@ -93,8 +94,9 @@ onMounted(() => {
                             <td class="py-1.5 pr-2 text-gray-500 font-bold">{{ i + 1 }}</td>
                             <td class="py-1.5 pr-2 text-white font-medium">{{ entry.label }}</td>
                             <td class="py-1.5 pr-2 text-danger/90 text-right tabular-nums font-bold">{{
-                                entry.count.toLocaleString() }}</td>
-                            <td class="py-1.5 text-danger/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%
+                                (entry.count ?? 0).toLocaleString() }}</td>
+                            <td class="py-1.5 text-danger/60 text-right tabular-nums">{{ (entry.percentage ?? 0
+                            ).toFixed(1) }}%
                             </td>
                         </tr>
                     </tbody>

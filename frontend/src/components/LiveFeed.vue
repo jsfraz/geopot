@@ -60,7 +60,7 @@ function addEntry(connection: ModelsConnection) {
 }
 
 onMounted(() => {
-    new StatsApi(props.apiConfiguration).getRecentConnections(props.initialLimit).subscribe({
+    new StatsApi(props.apiConfiguration).getRecentConnections({ limit: props.initialLimit }).subscribe({
         next: (data: ModelsConnection[]) => {
             // getRecentConnections returns newest-first, reverse for chronological order
             entries.value = [...data].reverse();
