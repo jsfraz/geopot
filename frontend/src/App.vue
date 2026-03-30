@@ -3,6 +3,10 @@ import { useWebSocket } from '@vueuse/core';
 import Globe from './components/Globe.vue';
 import Heatmap from './components/Heatmap.vue';
 import StatCard from './components/StatCard.vue';
+import ConnectionsChart from './components/ConnectionsChart.vue';
+import TopCountriesChart from './components/TopCountriesChart.vue';
+import CredentialsTable from './components/CredentialsTable.vue';
+import LiveFeed from './components/LiveFeed.vue';
 import { Configuration, StatsApi } from './api';
 import { ref } from 'vue';
 import type { ModelsConnection } from './api/models/ModelsConnection';
@@ -14,6 +18,8 @@ const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.
 const globe = ref<InstanceType<typeof Globe> | null>(null);
 // Heatmap component
 const heatmap = ref<InstanceType<typeof Heatmap> | null>(null);
+// LiveFeed component
+const liveFeed = ref<InstanceType<typeof LiveFeed> | null>(null);
 // API client config and instances
 const apiConfig = new Configuration({
   basePath: import.meta.env.DEV ? 'http://localhost:8080' : window.location.origin,
@@ -67,6 +73,10 @@ useWebSocket(websocketUrl,
       if (heatmap.value && msg.latitude != 0 && msg.longitude != 0) {
         heatmap.value.addPoint(msg.latitude, msg.longitude);
       }
+      // Add entry to live feed
+      if (liveFeed.value) {
+        liveFeed.value.addEntry(msg);
+      }
     },
   }
 );
@@ -99,20 +109,35 @@ useWebSocket(websocketUrl,
         <ServerInfoCard :apiConfiguration="apiConfig" />
       </div>
     </div>
-    <!-- Something and globe -->
+
+    <!-- Row 2: Connections chart + Globe -->
     <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 gap-4 mt-4 xl:mt-0">
-      <!-- Something -->
-      <div class="hidden xl:block xl:w-5/7">
+      <!-- Connections over time -->
+      <div class="w-full xl:flex-1 h-64 xl:h-auto">
+        <ConnectionsChart :apiConfiguration="apiConfig" />
       </div>
       <!-- Globe -->
       <div class="w-full xl:w-2/7 h-72 xl:h-auto">
         <Globe :apiConfiguration="apiConfig" ref="globe" />
       </div>
     </div>
-    <!-- Something and heatmap -->
+
+    <!-- Row 3: Bottom panels + Heatmap -->
     <div class="w-full xl:h-2/5 flex flex-col xl:flex-row px-4 p-4 gap-4">
-      <!-- Something -->
-      <div class="hidden xl:block xl:w-5/7">
+      <!-- Left: Countries + LiveFeed + Credentials -->
+      <div class="w-full xl:flex-1 flex flex-col xl:flex-row gap-4 h-full">
+        <!-- Top Countries -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <TopCountriesChart :apiConfiguration="apiConfig" :limit="12" />
+        </div>
+        <!-- Live Feed -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <LiveFeed :apiConfiguration="apiConfig" ref="liveFeed" />
+        </div>
+        <!-- Credentials Table -->
+        <div class="w-full xl:w-1/3 h-64 xl:h-auto">
+          <CredentialsTable :apiConfiguration="apiConfig" />
+        </div>
       </div>
       <!-- Heatmap -->
       <div class="w-full xl:w-2/7 h-72 xl:h-auto">
