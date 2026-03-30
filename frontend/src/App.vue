@@ -83,25 +83,26 @@ useWebSocket(websocketUrl,
 </script>
 
 <template>
-  <div class="flex flex-col min-h-screen xl:h-screen xl:overflow-hidden bg-hackerbg font-mono selection:bg-hacker/30 selection:text-white">
+  <div
+    class="flex flex-col min-h-screen xl:h-screen xl:overflow-hidden bg-hackerbg font-mono selection:bg-hacker/30 selection:text-white">
     <!-- Header/Stat cards row -->
     <div class="w-full xl:h-[18%] flex flex-col xl:flex-row p-4 gap-4 shrink-0">
       <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-1 gap-4">
         <!-- Total connections -->
         <div class="flex-1">
-          <StatCard ref="totalConnectionsCard" title="Total Pulses"
+          <StatCard ref="totalConnectionsCard" title="Total Connections"
             :observableNumber="statsApi.getTotalConnectionCount()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="totalUniqueIpsCard" title="Unique Nodes"
+          <StatCard ref="totalUniqueIpsCard" title="Unique IPs"
             :observableStrings="statsApi.getAllUniqueIPAddresses()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="totalUniqueCountriesCard" title="Sectors Map"
+          <StatCard ref="totalUniqueCountriesCard" title="Unique Countries"
             :observableStrings="statsApi.getAllUniqueCountries()" />
         </div>
         <div class="flex-1">
-          <StatCard ref="last24HourConnectionsCard" title="Active 24H"
+          <StatCard ref="last24HourConnectionsCard" title="Last 24H"
             :observableNumber="statsApi.getLast24HourConnections()" :refreshInterval="60000" />
         </div>
       </div>

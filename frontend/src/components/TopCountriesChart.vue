@@ -42,7 +42,7 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
         offsetX: 5,
     },
     colors: ['#39ff14'],
-    fill: { 
+    fill: {
         type: 'gradient' as const,
         gradient: {
             shade: 'dark',
@@ -107,27 +107,28 @@ onMounted(() => {
     <div class="hud-card relative w-full h-full flex flex-col rounded-sm overflow-hidden p-2">
         <div class="px-2 pt-2.5 pb-1.5 shrink-0 border-b border-hacker/20 mb-2 bg-hacker/5">
             <p class="text-[11px] font-bold uppercase text-hacker tracking-[0.2em] font-mono italic">
-                <span class="mr-1 text-hacker">▶</span> Top Attack Origins
+                <span class="mr-1 text-hacker">▶</span> Top Countries
             </p>
         </div>
         <Transition name="fade">
-            <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
+            <div v-if="!isLoaded" class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
         <div class="flex-1 min-h-0">
-            <VueApexCharts
-                type="bar"
-                height="100%"
-                :options="chartOptions"
-                :series="series"
-            />
+            <VueApexCharts type="bar" height="100%" :options="chartOptions" :series="series" />
         </div>
     </div>
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
 </style>

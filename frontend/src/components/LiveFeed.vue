@@ -86,20 +86,20 @@ onMounted(() => {
                 <span class="relative inline-flex rounded-full h-2 w-2 bg-hacker shadow-[0_0_5px_#20c20e]"></span>
             </span>
             <p class="text-[10px] font-bold uppercase text-hacker/60 tracking-[0.2em] font-mono italic">
-                <span class="mr-1 text-hacker">▶</span> Real-time Signal Feed
+                <span class="mr-1 text-hacker">▶</span> Real-time Feed
             </p>
         </div>
 
         <!-- Spinner -->
         <Transition name="fade">
-            <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
+            <div v-if="!isLoaded" class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
 
         <!-- Table header -->
-        <div class="grid grid-cols-[75px_50px_140px_1fr_1fr] gap-x-2 px-3 py-1.5 shrink-0 text-hacker/60 font-mono text-[10px] uppercase tracking-widest border-b border-hacker/20 bg-hacker/5">
+        <div
+            class="grid grid-cols-[75px_50px_140px_1fr_1fr] gap-x-2 px-3 py-1.5 shrink-0 text-hacker/60 font-mono text-[10px] uppercase tracking-widest border-b border-hacker/20 bg-hacker/5">
             <span>Time</span>
             <span>Cc</span>
             <span>IP Address</span>
@@ -109,24 +109,23 @@ onMounted(() => {
 
         <!-- Feed rows -->
         <div ref="feedEl" @scroll="onScroll" class="flex-1 overflow-y-auto min-h-0 scrollbar-thin px-1">
-            <div
-                v-for="(entry, i) in entries"
-                :key="`${entry.id}-${i}`"
-                :class="[
-                    'grid grid-cols-[75px_50px_140px_1fr_1fr] gap-x-2 px-2 py-1.5 font-mono text-[13px] transition-all duration-200 border-l-2',
-                    entry.isProxy ? 'border-danger/60 bg-danger/10 hover:bg-danger/20' : (i % 2 === 0 ? 'border-transparent hover:bg-hacker/10' : 'border-transparent bg-hacker/5 hover:bg-hacker/10'),
-                    i === entries.length - 1 ? 'glow-text-green text-hacker font-bold' : ''
-                ]"
-            >
+            <div v-for="(entry, i) in entries" :key="`${entry.id}-${i}`" :class="[
+                'grid grid-cols-[75px_50px_140px_1fr_1fr] gap-x-2 px-2 py-1.5 font-mono text-[13px] transition-all duration-200 border-l-2',
+                entry.isProxy ? 'border-danger/60 bg-danger/10 hover:bg-danger/20' : (i % 2 === 0 ? 'border-transparent hover:bg-hacker/10' : 'border-transparent bg-hacker/5 hover:bg-hacker/10'),
+                i === entries.length - 1 ? 'glow-text-green text-hacker font-bold' : ''
+            ]">
                 <span class="text-gray-500 tabular-nums">{{ formatTime(entry.timestamp) }}</span>
                 <span class="text-hacker/90 truncate font-bold" :title="entry.countryName">
                     {{ countryFlag(entry.countryCode) }} {{ entry.countryCode || '??' }}
                 </span>
-                <span :class="['truncate tabular-nums font-bold', entry.isProxy ? 'text-danger glow-text-red' : 'text-gray-200']" :title="entry.ipAddress">
+                <span
+                    :class="['truncate tabular-nums font-bold', entry.isProxy ? 'text-danger glow-text-red' : 'text-gray-200']"
+                    :title="entry.ipAddress">
                     {{ entry.ipAddress }}
                 </span>
                 <span class="text-hacker truncate" :title="entry.user">{{ entry.user || '---' }}</span>
-                <span :class="['truncate font-medium', entry.isProxy ? 'text-warning' : 'text-warning/80']" :title="entry.password">
+                <span :class="['truncate font-medium', entry.isProxy ? 'text-warning' : 'text-warning/80']"
+                    :title="entry.password">
                     {{ entry.password || '---' }}
                 </span>
             </div>
@@ -139,9 +138,26 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
-.fade-enter-from, .fade-leave-to { opacity: 0; }
-.scrollbar-thin::-webkit-scrollbar { width: 3px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background: #20c20e40; border-radius: 2px; }
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+    width: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #20c20e40;
+    border-radius: 2px;
+}
 </style>

@@ -37,8 +37,7 @@ onMounted(() => {
 <template>
     <div class="hud-card relative w-full h-full flex flex-col rounded-sm overflow-hidden p-2">
         <Transition name="fade">
-            <div v-if="!isLoaded"
-                class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
+            <div v-if="!isLoaded" class="absolute inset-0 flex justify-center items-center z-10 bg-black/50">
                 <VueSpinnerPulse size="10" :color="spinnerColor" />
             </div>
         </Transition>
@@ -46,7 +45,7 @@ onMounted(() => {
         <!-- Top Usernames -->
         <div class="flex flex-col flex-1 min-h-0 overflow-hidden p-3 border-b border-hacker/20 bg-hacker/5">
             <p class="text-[11px] font-bold uppercase text-hacker/80 tracking-[0.2em] font-mono italic mb-2 shrink-0">
-                <span class="mr-1 text-hacker">▶</span> Top Identities
+                <span class="mr-1 text-hacker">▶</span> Top Usernames
             </p>
             <div class="flex-1 overflow-y-auto scrollbar-thin">
                 <table class="w-full font-mono text-[12px]">
@@ -63,8 +62,10 @@ onMounted(() => {
                             class="hover:bg-hacker/10 transition-colors">
                             <td class="py-1.5 pr-2 text-gray-500 font-bold">{{ i + 1 }}</td>
                             <td class="py-1.5 pr-2 text-white font-medium">{{ entry.label }}</td>
-                            <td class="py-1.5 pr-2 text-hacker/90 text-right tabular-nums font-bold">{{ entry.count.toLocaleString() }}</td>
-                            <td class="py-1.5 text-hacker/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%</td>
+                            <td class="py-1.5 pr-2 text-hacker/90 text-right tabular-nums font-bold">{{
+                                entry.count.toLocaleString() }}</td>
+                            <td class="py-1.5 text-hacker/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%
+                            </td>
                         </tr>
                     </tbody>
                 </table>
@@ -74,7 +75,7 @@ onMounted(() => {
         <!-- Top Passwords -->
         <div class="flex flex-col flex-1 min-h-0 overflow-hidden p-3 bg-danger/5">
             <p class="text-[11px] font-bold uppercase text-danger/80 tracking-[0.2em] font-mono italic mb-2 shrink-0">
-                <span class="mr-1 text-danger">▶</span> Top Credentials
+                <span class="mr-1 text-danger">▶</span> Top Passwords
             </p>
             <div class="flex-1 overflow-y-auto scrollbar-thin">
                 <table class="w-full font-mono text-[12px]">
@@ -91,8 +92,10 @@ onMounted(() => {
                             class="hover:bg-danger/10 transition-colors">
                             <td class="py-1.5 pr-2 text-gray-500 font-bold">{{ i + 1 }}</td>
                             <td class="py-1.5 pr-2 text-white font-medium">{{ entry.label }}</td>
-                            <td class="py-1.5 pr-2 text-danger/90 text-right tabular-nums font-bold">{{ entry.count.toLocaleString() }}</td>
-                            <td class="py-1.5 text-danger/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%</td>
+                            <td class="py-1.5 pr-2 text-danger/90 text-right tabular-nums font-bold">{{
+                                entry.count.toLocaleString() }}</td>
+                            <td class="py-1.5 text-danger/60 text-right tabular-nums">{{ entry.percentage.toFixed(1) }}%
+                            </td>
                         </tr>
                     </tbody>
                 </table>
