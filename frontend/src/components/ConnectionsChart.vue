@@ -7,6 +7,8 @@ import { Configuration } from '@/api/runtime';
 import { StatsApi } from '@/api/apis';
 import type { ModelsHourlyStat } from '@/api/models';
 
+// FIXME chart indicator
+
 const props = defineProps({
     apiConfiguration: { type: Configuration, required: true },
     spinnerColor: { type: String, default: '#20c20e' },

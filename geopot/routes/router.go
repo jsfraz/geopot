@@ -80,9 +80,9 @@ func NewRouter() (*fizz.Fizz, error) {
 		return nil, fmt.Errorf("fizz errors: %v", fizz.Errors())
 	}
 
-	// Static files (frontend) - musí být až po definici všech API tras
+	// Static files (frontend) - must be after defining all API routes
 	engine.NoRoute(func(c *gin.Context) {
-		// Zkus servírovat statický soubor
+		// Try to serve static file
 		c.File("./static" + c.Request.URL.Path)
 	})
 
