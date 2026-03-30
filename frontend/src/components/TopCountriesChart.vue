@@ -34,9 +34,8 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
     },
     dataLabels: {
         enabled: true,
-        formatter: (_val: number, opts: any) => {
-            const pct = entries.value[opts.dataPointIndex]?.percentage;
-            return pct ? `${pct.toFixed(1)}%` : '';
+        formatter: (val: number) => {
+            return val ? `${val.toFixed(1)}%` : '';
         },
         style: { fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '10px', fontWeight: 600, colors: ['#39ff14'] },
         offsetX: 5,
@@ -62,6 +61,10 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
         categories: [] as string[],
         labels: {
             style: { colors: '#5a8a5a', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace', fontSize: '11px', fontWeight: 600 },
+            formatter: (val: string) => {
+                const num = Number(val);
+                return isNaN(num) ? val : `${num.toFixed(0)}%`;
+            }
         },
         axisBorder: { show: false },
         axisTicks: { show: false },
@@ -75,7 +78,14 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
     tooltip: {
         theme: 'dark',
         style: { fontSize: '10px', fontFamily: 'FiraCodeNerdFontMono-Regular, monospace' },
-        y: { formatter: (val: number) => val.toLocaleString() },
+        y: { 
+            title: { formatter: () => '' },
+            formatter: (val: number, opts: any) => {
+                const originalIndex = entries.value.length - 1 - opts.dataPointIndex;
+                const count = entries.value[originalIndex]?.count;
+                return count ? `${count.toLocaleString()} connections` : `${val}%`;
+            } 
+        },
     },
 });
 
@@ -92,7 +102,7 @@ onMounted(() => {
                     categories: reversed.map(e => e.label ?? ''),
                 },
             };
-            series.value = [{ data: reversed.map(e => e.count ?? 0) }];
+            series.value = [{ data: reversed.map(e => e.percentage ?? 0) }];
         },
         error: (err) => {
             console.error('TopCountriesChart error:', err);
