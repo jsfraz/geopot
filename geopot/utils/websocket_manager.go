@@ -114,6 +114,20 @@ func (manager *WebSocketManager) ClientCount() int {
 	return len(manager.clients)
 }
 
+// CloseAll disconnects every registered client. Used during shutdown.
+func (manager *WebSocketManager) CloseAll() {
+	manager.mutex.Lock()
+	clients := make([]*wsClient, 0, len(manager.clients))
+	for client := range manager.clients {
+		clients = append(clients, client)
+	}
+	manager.mutex.Unlock()
+
+	for _, client := range clients {
+		manager.removeClient(client)
+	}
+}
+
 // writePump serializes writes to a single client and sends periodic pings.
 func (manager *WebSocketManager) writePump(client *wsClient) {
 	ticker := time.NewTicker(wsPingPeriod)

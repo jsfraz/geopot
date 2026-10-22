@@ -10,20 +10,20 @@ type Connection struct {
 	ID uint64 `json:"id" gorm:"primaryKey;uniqueIndex:idx_id_timestamp,priority:1" validate:"required"`
 
 	IPVersion     int     `json:"ipVersion" validate:"required"`
-	IPAddress     string  `json:"ipAddress" gorm:"index:idx_ip_address" validate:"required"`
+	IPAddress     string  `json:"ipAddress" validate:"required"`
 	Latitude      float64 `json:"latitude" validate:"required"`
 	Longitude     float64 `json:"longitude" validate:"required"`
 	CountryName   string  `json:"countryName" validate:"required"`
-	CountryCode   string  `json:"countryCode" gorm:"index:idx_country_code" validate:"required"`
+	CountryCode   string  `json:"countryCode" validate:"required"`
 	TimeZone      string  `json:"timeZone" validate:"required"`
 	ZipCode       string  `json:"zipCode" validate:"required"`
 	CityName      string  `json:"cityName" validate:"required"`
 	RegionName    string  `json:"regionName" validate:"required"`
-	IsProxy       bool    `json:"isProxy" gorm:"index:idx_is_proxy" validate:"required"`
+	IsProxy       bool    `json:"isProxy" validate:"required"`
 	Continent     string  `json:"continent" validate:"required"`
-	ContinentCode string  `json:"continentCode" gorm:"index:idx_continent_code" validate:"required"`
+	ContinentCode string  `json:"continentCode" validate:"required"`
 
-	User      string    `json:"user" gorm:"index:idx_user" validate:"required"`
+	User      string    `json:"user" validate:"required"`
 	Password  string    `json:"password" validate:"required"`
 	Timestamp time.Time `json:"timestamp" gorm:"type:timestamptz;index:idx_timestamp;uniqueIndex:idx_id_timestamp,priority:2;not null" validate:"required"`
 

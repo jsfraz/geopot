@@ -46,6 +46,9 @@ func NewRouter() (*fizz.Fizz, error) {
 	// Security headers, CORS and API rate limiting
 	engine.Use(securityHeaders(config.IsDebug()))
 	engine.Use(corsMiddleware())
+	// Compression must come after CORS: preflight requests are answered with an
+	// empty 204 and must not carry a Content-Encoding header.
+	engine.Use(gzipMiddleware())
 	engine.Use(rateLimitMiddleware(utils.NewRateLimiter(config.APIRateLimitPerMinute)))
 
 	// Never leak internal (e.g. database) errors to API clients.

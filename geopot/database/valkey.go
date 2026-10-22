@@ -10,6 +10,9 @@ import (
 	"github.com/valkey-io/valkey-go"
 )
 
+// Maximum number of connection records waiting in Valkey for geolocation.
+const maxQueuedRecords = 100000
+
 // Setup Valkey connection.
 func SetupValkey() {
 	valkey, err := valkey.NewClient(valkey.ClientOption{
@@ -36,9 +39,20 @@ func PushRecord(connection models.Connection) error {
 	if err != nil {
 		return err
 	}
-	// Add to list
+	// Add to list and keep the queue bounded: under a flood that outpaces the
+	// geolocation worker the oldest attempts are dropped instead of letting the
+	// list grow without limit.
 	client := utils.GetSingleton().Valkey
-	return client.Do(context.Background(), client.B().Rpush().Key("list").Element(string(c)).Build()).Error()
+	commands := []valkey.Completed{
+		client.B().Rpush().Key("list").Element(string(c)).Build(),
+		client.B().Ltrim().Key("list").Start(-maxQueuedRecords).Stop(-1).Build(),
+	}
+	for _, result := range client.DoMulti(context.Background(), commands...) {
+		if err := result.Error(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // Fetch and remove the connection record from the start of the list.

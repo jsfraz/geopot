@@ -6,6 +6,10 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 
 	"jsfraz/geopot/database"
@@ -31,6 +35,10 @@ func main() {
 	// Logging
 	log.SetPrefix("geopot: ")
 	log.SetFlags(log.LstdFlags | log.LUTC | log.Lmicroseconds)
+
+	// Shutdown context: cancelled on SIGINT/SIGTERM.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	// Load config
 	utils.LoadConfig()
@@ -59,16 +67,21 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 	// Start server in separated goroutine, panic on error
+	serverErr := make(chan error, 1)
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Panicln(err)
+			serverErr <- err
 		}
 	}()
 
 	// Get self IP info in the background: a failing third-party API must not
 	// prevent the honeypot from starting, and the SSH listener should not wait
 	// for it. The record is refreshed periodically afterwards.
-	database.StartSelfInfoRefresher(context.Background())
+	database.StartSelfInfoRefresher(ctx)
+
+	// Backfill the continuous aggregates in the background so a large history
+	// does not delay the listeners.
+	go database.RefreshContinuousAggregates()
 
 	// Server sshConfig with password callback denying everything
 	sshConfig := &ssh.ServerConfig{
@@ -133,8 +146,13 @@ func main() {
 	}
 	log.Println("SSH server is running on 0.0.0.0:2222")
 
-	// API call goroutine
-	go burstRateLimitCall(context.Background(), 60)
+	// API call goroutine. It returns once ctx is cancelled and every in-flight
+	// lookup has finished.
+	workerDone := make(chan struct{})
+	go func() {
+		burstRateLimitCall(ctx, 60)
+		close(workerDone)
+	}()
 
 	// Bound the number of concurrent SSH connections so a flood cannot
 	// exhaust file descriptors or goroutines.
@@ -144,28 +162,61 @@ func main() {
 	}
 	connectionSlots := make(chan struct{}, maxConnections)
 
-	for {
-		conn, err := listener.Accept()
-		if err != nil {
-			if errors.Is(err, net.ErrClosed) {
-				return
+	// Accept connections until the listener is closed by the shutdown below.
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				if errors.Is(err, net.ErrClosed) {
+					return
+				}
+				log.Printf("Failed to accept incoming connection: %v", err)
+				time.Sleep(acceptRetryDelay)
+				continue
 			}
-			log.Printf("Failed to accept incoming connection: %v", err)
-			time.Sleep(acceptRetryDelay)
-			continue
-		}
 
-		select {
-		case connectionSlots <- struct{}{}:
-			go func() {
-				defer func() { <-connectionSlots }()
-				handleConnection(conn, sshConfig)
-			}()
-		default:
-			log.Printf("Rejecting connection from %s: too many concurrent connections", conn.RemoteAddr())
-			_ = conn.Close()
+			select {
+			case connectionSlots <- struct{}{}:
+				go func() {
+					defer func() { <-connectionSlots }()
+					handleConnection(conn, sshConfig)
+				}()
+			default:
+				log.Printf("Rejecting connection from %s: too many concurrent connections", conn.RemoteAddr())
+				_ = conn.Close()
+			}
 		}
+	}()
+
+	// Wait for a shutdown signal or a fatal HTTP server error.
+	select {
+	case <-ctx.Done():
+		log.Println("Shutdown signal received, draining...")
+	case err := <-serverErr:
+		log.Printf("HTTP server failed: %v", err)
 	}
+
+	stop()
+	_ = listener.Close()
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		log.Printf("HTTP server shutdown: %v", err)
+	}
+
+	// Give in-flight geolocation work a chance to finish before the database
+	// handles are closed.
+	select {
+	case <-workerDone:
+	case <-time.After(20 * time.Second):
+		log.Println("Timed out waiting for in-flight geolocation work")
+	}
+	utils.GetSingleton().WebSocketManager.CloseAll()
+	if err := database.Close(); err != nil {
+		log.Printf("Failed to close databases: %v", err)
+	}
+	log.Println("Shutdown complete")
 }
 
 // Handle SSH connection.
@@ -188,10 +239,14 @@ func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
 // Allows burst rate limiting client calls with the payloads
 // https://go.dev/wiki/RateLimiting
 //
+// It returns once ctx is cancelled and all in-flight lookups have finished, so
+// the caller can safely close the database handles afterwards.
+//
 //	@param ctx
 //	@param burstLimit
 func burstRateLimitCall(ctx context.Context, burstLimit int) {
 	throttle := make(chan time.Time, burstLimit)
+	var inFlight sync.WaitGroup
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -209,55 +264,69 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 	}()
 
 	for {
-		<-throttle // Rate limit our client calls
+		select {
+		case <-ctx.Done():
+			inFlight.Wait()
+			return
+		case <-throttle: // Rate limit our client calls
+		}
+
+		inFlight.Add(1)
 		go func() {
-			// Fetch oldest records from Redis, get IP info and upload to Postgres
-			connection, err := database.PopRecord()
-			if err != nil {
-				log.Println(err)
-			}
-			// Return if result is nil
-			if connection == nil {
-				return
-			}
-
-			// Get IP data
-			lookupCtx, cancel := context.WithTimeout(context.Background(), geoLookupTimeout)
-			json, err := utils.GetIpInfo(lookupCtx, &connection.IPAddress)
-			cancel()
-
-			// Check for error
-			if err != nil {
-				log.Println(err)
-				requeueConnection(connection)
-				return
-			}
-
-			// Check for error
-			if err := connection.SetConnectionDetails(*json); err != nil {
-				log.Println(err)
-				requeueConnection(connection)
-				return
-			}
-
-			// The record is enriched, so it no longer needs the retry counter.
-			connection.Attempts = 0
-
-			// Insert to Postgres
-			if err := database.InsertConnection(connection); err != nil {
-				log.Println(err)
-				return
-			}
-
-			// After successful upload, broadcast to WebSocket clients
-			wsJsonBytes, err := connection.MarshalBinary()
-			if err != nil {
-				log.Printf("Error marshaling connection data: %v", err)
-				return
-			}
-			utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
+			defer inFlight.Done()
+			processQueuedRecord()
 		}()
 	}
+}
+
+// Geolocates the oldest queued record and stores it in Postgres, broadcasting
+// it to WebSocket clients on success.
+func processQueuedRecord() {
+	// Fetch oldest records from Redis, get IP info and upload to Postgres
+	connection, err := database.PopRecord()
+	if err != nil {
+		log.Println(err)
+	}
+	// Return if result is nil
+	if connection == nil {
+		return
+	}
+
+	// Get IP data
+	lookupCtx, cancel := context.WithTimeout(context.Background(), geoLookupTimeout)
+	json, err := utils.GetIpInfo(lookupCtx, &connection.IPAddress)
+	cancel()
+
+	// Check for error
+	if err != nil {
+		log.Println(err)
+		requeueConnection(connection)
+		return
+	}
+
+	// Check for error
+	if err := connection.SetConnectionDetails(*json); err != nil {
+		log.Println(err)
+		requeueConnection(connection)
+		return
+	}
+
+	// The record is enriched, so it no longer needs the retry counter.
+	connection.Attempts = 0
+
+	// Insert to Postgres
+	if err := database.InsertConnection(connection); err != nil {
+		log.Println(err)
+		return
+	}
+
+	// After successful upload, broadcast to WebSocket clients
+	wsJsonBytes, err := connection.MarshalBinary()
+	if err != nil {
+		log.Printf("Error marshaling connection data: %v", err)
+		return
+	}
+	utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 }
 
 // Puts a record whose geolocation failed back at the end of the Valkey queue,

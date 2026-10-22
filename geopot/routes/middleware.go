@@ -1,14 +1,21 @@
 package routes
 
 import (
+	"compress/gzip"
+	"io"
 	"net/http"
 	"path"
+	"regexp"
 	"strings"
+	"sync"
 
 	"jsfraz/geopot/utils"
 
 	"github.com/gin-gonic/gin"
 )
+
+// Vite emits content-hashed asset names, which can be cached forever.
+var hashedAssetPattern = regexp.MustCompile(`-[A-Za-z0-9_-]{8,}\.(?:js|css|woff2?|ttf|png|jpe?g|svg|webp)$`)
 
 // Adds conservative security headers to every response.
 //
@@ -100,6 +107,85 @@ func rateLimitMiddleware(limiter *utils.RateLimiter) gin.HandlerFunc {
 	}
 }
 
+// Compresses API responses. Static assets are left to the reverse proxy, which
+// can cache the compressed representation and knows how to honour Range and
+// conditional requests; the WebSocket upgrade needs the raw ResponseWriter so
+// the connection can be hijacked.
+//
+// It must be registered after corsMiddleware so preflight requests, which are
+// answered with an empty 204, never get a Content-Encoding header.
+//
+//	@return gin.HandlerFunc
+func gzipMiddleware() gin.HandlerFunc {
+	writers := sync.Pool{
+		New: func() interface{} {
+			return gzip.NewWriter(io.Discard)
+		},
+	}
+
+	return func(c *gin.Context) {
+		if !strings.Contains(c.GetHeader("Accept-Encoding"), "gzip") ||
+			c.Request.Method == http.MethodHead ||
+			!strings.HasPrefix(c.Request.URL.Path, "/api") {
+			c.Next()
+			return
+		}
+
+		writer := writers.Get().(*gzip.Writer)
+		writer.Reset(c.Writer)
+		defer func() {
+			_ = writer.Close()
+			writers.Put(writer)
+		}()
+
+		headers := c.Writer.Header()
+		headers.Set("Content-Encoding", "gzip")
+		headers.Add("Vary", "Accept-Encoding")
+		headers.Del("Content-Length")
+
+		c.Writer = &gzipResponseWriter{ResponseWriter: c.Writer, writer: writer}
+		c.Next()
+	}
+}
+
+// gzipResponseWriter writes the response body through a gzip.Writer.
+type gzipResponseWriter struct {
+	gin.ResponseWriter
+	writer *gzip.Writer
+}
+
+// Writes the compressed body.
+//
+//	@receiver w
+//	@param data
+//	@return int
+//	@return error
+func (w *gzipResponseWriter) Write(data []byte) (int, error) {
+	return w.writer.Write(data)
+}
+
+// Writes the compressed body from a string.
+//
+//	@receiver w
+//	@param s
+//	@return int
+//	@return error
+func (w *gzipResponseWriter) WriteString(s string) (int, error) {
+	return w.writer.Write([]byte(s))
+}
+
+// Returns the cache policy for a static file: content-hashed assets never
+// change, everything else is revalidated daily.
+//
+//	@param requestPath
+//	@return string
+func cacheControlFor(requestPath string) string {
+	if hashedAssetPattern.MatchString(requestPath) {
+		return "public, max-age=31536000, immutable"
+	}
+	return "public, max-age=86400"
+}
+
 // Serves the built frontend from disk, with an SPA fallback to index.html.
 // Directory listings are never exposed.
 //
@@ -127,6 +213,7 @@ func staticHandler(root string) gin.HandlerFunc {
 			_ = file.Close()
 			if statErr == nil {
 				if !info.IsDir() {
+					c.Header("Cache-Control", cacheControlFor(requestPath))
 					fileServer.ServeHTTP(c.Writer, c.Request)
 					return
 				}
@@ -144,7 +231,9 @@ func staticHandler(root string) gin.HandlerFunc {
 			return
 		}
 
-		// SPA fallback.
+		// SPA fallback: the shell must be revalidated on every load so a new
+		// deployment is picked up immediately.
+		c.Header("Cache-Control", "no-cache")
 		c.Request.URL.Path = "/"
 		c.Request.URL.RawPath = ""
 		fileServer.ServeHTTP(c.Writer, c.Request)

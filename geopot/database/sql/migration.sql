@@ -9,13 +9,21 @@ END$$;
 -- Create hypertable for TimescaleDB
 SELECT create_hypertable('connections', 'timestamp', if_not_exists => TRUE, migrate_data => TRUE);
 
--- Create indexes for optimal querying
-CREATE INDEX IF NOT EXISTS idx_connections_timestamp_ip ON connections (timestamp, ip_address);
-CREATE INDEX IF NOT EXISTS idx_connections_timestamp_country ON connections (timestamp, country_code);
-CREATE INDEX IF NOT EXISTS idx_connections_timestamp_country_name ON connections (timestamp, country_name);
-CREATE INDEX IF NOT EXISTS idx_connections_timestamp_user ON connections (timestamp, "user");
-CREATE INDEX IF NOT EXISTS idx_connections_ip_timestamp ON connections (ip_address, timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_connections_lat_lng_round ON connections (ROUND(latitude::numeric, 1), ROUND(longitude::numeric, 1));
+-- Only two indexes earn their write cost on an ingest-heavy table: the unique
+-- (id, timestamp) index required by the hypertable and the timestamp index used
+-- by the 24h count and the recent connections feed. Every other index only
+-- slowed inserts down, so legacy ones are dropped here.
+DROP INDEX IF EXISTS idx_connections_timestamp_ip;
+DROP INDEX IF EXISTS idx_connections_timestamp_country;
+DROP INDEX IF EXISTS idx_connections_timestamp_country_name;
+DROP INDEX IF EXISTS idx_connections_timestamp_user;
+DROP INDEX IF EXISTS idx_connections_ip_timestamp;
+DROP INDEX IF EXISTS idx_connections_lat_lng_round;
+DROP INDEX IF EXISTS idx_ip_address;
+DROP INDEX IF EXISTS idx_country_code;
+DROP INDEX IF EXISTS idx_is_proxy;
+DROP INDEX IF EXISTS idx_continent_code;
+DROP INDEX IF EXISTS idx_user;
 
 -- Add compression policy (compress chunks older than 7 days)
 ALTER TABLE connections SET (
@@ -55,10 +63,14 @@ FROM connections
 GROUP BY bucket
 WITH NO DATA;
 
+-- Refresh every 5 minutes so the chart catches up quickly; the current,
+-- incomplete hour is always read from the raw table by the API.
+SELECT remove_continuous_aggregate_policy('stats_hourly', if_exists => TRUE);
+
 SELECT add_continuous_aggregate_policy('stats_hourly',
     start_offset => INTERVAL '3 hours',
-    end_offset => INTERVAL '1 hour',
-    schedule_interval => INTERVAL '1 hour',
+    end_offset => INTERVAL '5 minutes',
+    schedule_interval => INTERVAL '5 minutes',
     if_not_exists => TRUE);
 
 -- Continuous Aggregates for Top Countries (hourly)

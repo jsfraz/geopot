@@ -6,19 +6,36 @@ import (
 	"time"
 )
 
+const (
+	// Expensive aggregate queries are cached for this long.
+	statsCacheTTL = 30 * time.Second
+	// When a refresh fails, the previous value is served for this long.
+	statsCacheStaleFor = 5 * time.Minute
+	// The heatmap is refreshed less often and only covers a recent window.
+	heatmapCacheTTL = 5 * time.Minute
+	heatmapWindow   = 30 * 24 * time.Hour
+)
+
+var (
+	totalConnectionsCache = utils.NewTTLCache[int64]()
+	uniqueIPsCache        = utils.NewTTLCache[int64]()
+	uniqueCountriesCache  = utils.NewTTLCache[int64]()
+	last24HourCache       = utils.NewTTLCache[int64]()
+	heatmapCache          = utils.NewTTLCache[[]models.LatLng]()
+)
+
 // Gets the total number of SSH connections stored in the database.
 //
 //	@return int64
 //	@return error
 func GetTotalConnectionCount() (int64, error) {
-	var count int64
-	// Reverted to raw table for 100% accuracy.
-	// Index-only scan on idx_id_timestamp makes this fast enough for 5M+ records.
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Count(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return totalConnectionsCache.Get("total", statsCacheTTL, statsCacheStaleFor, func() (int64, error) {
+		var count int64
+		// Reverted to raw table for 100% accuracy.
+		// Index-only scan on idx_timestamp makes this fast enough for 5M+ records.
+		err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Count(&count).Error
+		return count, err
+	})
 }
 
 // Get the count of all unique IP addresses stored in the database.
@@ -26,12 +43,11 @@ func GetTotalConnectionCount() (int64, error) {
 //	@return int64
 //	@return error
 func GetUniqueIPCount() (int64, error) {
-	var count int64
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("COUNT(DISTINCT ip_address)").Scan(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return uniqueIPsCache.Get("unique-ips", statsCacheTTL, statsCacheStaleFor, func() (int64, error) {
+		var count int64
+		err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Select("COUNT(DISTINCT ip_address)").Scan(&count).Error
+		return count, err
+	})
 }
 
 // Get the count of all unique countries stored in the database.
@@ -39,12 +55,11 @@ func GetUniqueIPCount() (int64, error) {
 //	@return int64
 //	@return error
 func GetUniqueCountryCount() (int64, error) {
-	var count int64
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Where("country_name != ''").Select("COUNT(DISTINCT country_name)").Scan(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return uniqueCountriesCache.Get("unique-countries", statsCacheTTL, statsCacheStaleFor, func() (int64, error) {
+		var count int64
+		err := utils.GetSingleton().Postgres.Model(&models.Connection{}).Where("country_name != ''").Select("COUNT(DISTINCT country_name)").Scan(&count).Error
+		return count, err
+	})
 }
 
 // Get the number of connections in the last 24 hours.
@@ -52,51 +67,90 @@ func GetUniqueCountryCount() (int64, error) {
 //	@return int64
 //	@return error
 func GetLast24HourConnections() (int64, error) {
-	var count int64
-	// Reverted to raw table for absolute precision.
-	// Efficiently uses idx_timestamp or idx_id_timestamp.
-	err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
-		Where("timestamp >= NOW() - INTERVAL '24 HOURS'").
-		Count(&count).Error
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
+	return last24HourCache.Get("last-24h", statsCacheTTL, statsCacheStaleFor, func() (int64, error) {
+		var count int64
+		// Reverted to raw table for absolute precision.
+		// Efficiently uses idx_timestamp.
+		err := utils.GetSingleton().Postgres.Model(&models.Connection{}).
+			Where("timestamp >= NOW() - INTERVAL '24 HOURS'").
+			Count(&count).Error
+		return count, err
+	})
 }
 
-// Get all latitude and longitude pairs from the database.
+// Get all latitude and longitude pairs from the database, limited to the
+// recent heatmap window so the response cannot grow without bound.
 //
 //	@return []models.LatLng
 //	@return error
 func GetAllLatLngs() ([]models.LatLng, error) {
-	var latLngs []models.LatLng
-	// Query from Continuous Aggregate view (pre-calculated)
-	err := utils.GetSingleton().Postgres.Table("heatmap_1h").
-		Select("latitude, longitude, SUM(intensity) AS intensity").
-		Group("latitude, longitude").
-		Find(&latLngs).Error
-	if err != nil {
-		return nil, err
-	}
-	return latLngs, nil
+	return heatmapCache.Get("heatmap", heatmapCacheTTL, statsCacheStaleFor, func() ([]models.LatLng, error) {
+		var latLngs []models.LatLng
+		since := time.Now().UTC().Add(-heatmapWindow)
+		// Query from Continuous Aggregate view (pre-calculated)
+		err := utils.GetSingleton().Postgres.Table("heatmap_1h").
+			Select("latitude, longitude, SUM(intensity) AS intensity").
+			Where("bucket >= ?", since).
+			Group("latitude, longitude").
+			Find(&latLngs).Error
+		if err != nil {
+			return nil, err
+		}
+		return latLngs, nil
+	})
 }
 
 // GetHourlyStats returns connection counts per hour bucket for the last N hours.
-// Uses the stats_hourly continuous aggregate for performance.
+// The materialized aggregate provides the closed hours, while the current
+// (incomplete) hour is counted directly so the chart is not an hour behind.
 //
 //	@param hours - number of hours to look back
 //	@return []models.HourlyStat
 //	@return error
 func GetHourlyStats(hours int) ([]models.HourlyStat, error) {
-	var stats []models.HourlyStat
-	since := time.Now().UTC().Add(-time.Duration(hours) * time.Hour)
-	err := utils.GetSingleton().Postgres.Table("stats_hourly").
+	if hours <= 0 {
+		hours = 24
+	}
+
+	postgres := utils.GetSingleton().Postgres
+	currentHour := time.Now().UTC().Truncate(time.Hour)
+	since := currentHour.Add(-time.Duration(hours-1) * time.Hour)
+
+	var materialized []models.HourlyStat
+	err := postgres.Table("stats_hourly").
 		Select("bucket, connection_count AS count").
-		Where("bucket >= ?", since).
-		Order("bucket ASC").
-		Find(&stats).Error
+		Where("bucket >= ? AND bucket < ?", since, currentHour).
+		Find(&materialized).Error
 	if err != nil {
 		return nil, err
+	}
+
+	var current []models.HourlyStat
+	err = postgres.Model(&models.Connection{}).
+		Select("time_bucket('1 hour', timestamp) AS bucket, COUNT(*) AS count").
+		Where("timestamp >= ?", currentHour).
+		Group("bucket").
+		Find(&current).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// Key by Unix time: the driver may return buckets in any location.
+	counts := make(map[int64]int64, len(materialized)+len(current))
+	for _, stat := range materialized {
+		counts[stat.Bucket.UTC().Unix()] = stat.Count
+	}
+	for _, stat := range current {
+		counts[stat.Bucket.UTC().Unix()] = stat.Count
+	}
+
+	// Emit every bucket, including the empty ones, so the series has no gaps.
+	stats := make([]models.HourlyStat, 0, hours)
+	for bucket := since; !bucket.After(currentHour); bucket = bucket.Add(time.Hour) {
+		stats = append(stats, models.HourlyStat{
+			Bucket: bucket,
+			Count:  counts[bucket.UTC().Unix()],
+		})
 	}
 	return stats, nil
 }
