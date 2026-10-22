@@ -74,7 +74,7 @@ For deploying behind a reverse proxy see [nginx configuration](geopot.conf).
 ### Local build
 
 ```bash
-sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 ```
 
 ### Testing `localhost:2222`

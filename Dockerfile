@@ -1,5 +1,5 @@
 # Builder stage for backend
-FROM golang:1.26.10-alpine AS backend-build
+FROM golang:1.27.3-alpine AS backend-build
 
 WORKDIR /app
 
