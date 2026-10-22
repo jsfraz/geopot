@@ -20,6 +20,11 @@ const (
 	rateLimit           = time.Millisecond * 1050
 	sshHandshakeTimeout = 30 * time.Second
 	acceptRetryDelay    = 100 * time.Millisecond
+	// Maximum number of geolocation attempts for a single queued record
+	// before it is dropped instead of being retried forever.
+	maxGeoAttempts = 3
+	// Upper bound of a single geolocation HTTP call.
+	geoLookupTimeout = 15 * time.Second
 )
 
 func main() {
@@ -60,9 +65,10 @@ func main() {
 		}
 	}()
 
-	// Get self IP info
-	database.SetSelfIpInfo()
-	time.Sleep(time.Second)
+	// Get self IP info in the background: a failing third-party API must not
+	// prevent the honeypot from starting, and the SSH listener should not wait
+	// for it. The record is refreshed periodically afterwards.
+	database.StartSelfInfoRefresher(context.Background())
 
 	// Server sshConfig with password callback denying everything
 	sshConfig := &ssh.ServerConfig{
@@ -216,34 +222,56 @@ func burstRateLimitCall(ctx context.Context, burstLimit int) {
 			}
 
 			// Get IP data
-			json, err := utils.GetIpInfo(&connection.IPAddress)
+			lookupCtx, cancel := context.WithTimeout(context.Background(), geoLookupTimeout)
+			json, err := utils.GetIpInfo(lookupCtx, &connection.IPAddress)
+			cancel()
+
 			// Check for error
 			if err != nil {
 				log.Println(err)
-				// Push back to Valkey (to end of the list)
-				if err := database.PushRecord(*connection); err != nil {
-					log.Println(err)
-				}
-			} else {
-				err = connection.SetConnectionDetails(*json)
-				// Check for error
-				if err != nil {
-					log.Println(err)
-				} else {
-					// Insert to Postgres
-					if err := database.InsertConnection(connection); err != nil {
-						log.Println(err)
-					} else {
-						// After successful upload, broadcast to WebSocket clients
-						wsJsonBytes, err := connection.MarshalBinary()
-						if err != nil {
-							log.Printf("Error marshaling connection data: %v", err)
-						} else {
-							utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
-						}
-					}
-				}
+				requeueConnection(connection)
+				return
 			}
+
+			// Check for error
+			if err := connection.SetConnectionDetails(*json); err != nil {
+				log.Println(err)
+				requeueConnection(connection)
+				return
+			}
+
+			// The record is enriched, so it no longer needs the retry counter.
+			connection.Attempts = 0
+
+			// Insert to Postgres
+			if err := database.InsertConnection(connection); err != nil {
+				log.Println(err)
+				return
+			}
+
+			// After successful upload, broadcast to WebSocket clients
+			wsJsonBytes, err := connection.MarshalBinary()
+			if err != nil {
+				log.Printf("Error marshaling connection data: %v", err)
+				return
+			}
+			utils.GetSingleton().WebSocketManager.BroadcastConnection(wsJsonBytes)
 		}()
+	}
+}
+
+// Puts a record whose geolocation failed back at the end of the Valkey queue,
+// dropping it once the retry budget is exhausted. Without the cap a single
+// permanently failing IP would be retried forever.
+//
+//	@param connection
+func requeueConnection(connection *models.Connection) {
+	if connection.Attempts+1 >= maxGeoAttempts {
+		log.Printf("Dropping connection record from %s after %d failed geolocation attempts", connection.IPAddress, connection.Attempts+1)
+		return
+	}
+	connection.Attempts++
+	if err := database.PushRecord(*connection); err != nil {
+		log.Println(err)
 	}
 }

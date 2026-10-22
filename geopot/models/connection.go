@@ -26,6 +26,30 @@ type Connection struct {
 	User      string    `json:"user" gorm:"index:idx_user" validate:"required"`
 	Password  string    `json:"password" validate:"required"`
 	Timestamp time.Time `json:"timestamp" gorm:"type:timestamptz;index:idx_timestamp;uniqueIndex:idx_id_timestamp,priority:2;not null" validate:"required"`
+
+	// Number of failed geolocation attempts. Only used while the record waits
+	// in Valkey, it is never persisted nor sent to WebSocket clients.
+	Attempts int `json:"attempts,omitempty" gorm:"-"`
+}
+
+// geoDetails mirrors the subset of the https://docs.freeipapi.com/ response
+// consumed by SetConnectionDetails. It is kept separate from Connection
+// because the upstream API reports time zones as an array and may send a null
+// zip code, which Connection (a database model) must not encode.
+type geoDetails struct {
+	IPVersion     int      `json:"ipVersion"`
+	Latitude      float64  `json:"latitude"`
+	Longitude     float64  `json:"longitude"`
+	CountryName   string   `json:"countryName"`
+	CountryCode   string   `json:"countryCode"`
+	TimeZone      string   `json:"timeZone"`
+	TimeZones     []string `json:"timeZones"`
+	ZipCode       *string  `json:"zipCode"`
+	CityName      string   `json:"cityName"`
+	RegionName    string   `json:"regionName"`
+	IsProxy       bool     `json:"isProxy"`
+	Continent     string   `json:"continent"`
+	ContinentCode string   `json:"continentCode"`
 }
 
 // Create new SSH connection info.
@@ -50,23 +74,35 @@ func NewConnection(host string, user string, password string, timestamp time.Tim
 //	@param jsonData
 //	@return error
 func (c *Connection) SetConnectionDetails(jsonData string) error {
-	var connection Connection
-	err := json.Unmarshal([]byte(jsonData), &connection)
+	var details geoDetails
+	err := json.Unmarshal([]byte(jsonData), &details)
 	if err != nil {
 		return err
 	}
-	c.IPVersion = connection.IPVersion
-	c.Latitude = connection.Latitude
-	c.Longitude = connection.Longitude
-	c.CountryName = connection.CountryName
-	c.CountryCode = connection.CountryCode
-	c.TimeZone = connection.TimeZone
-	c.ZipCode = connection.ZipCode
-	c.CityName = connection.CityName
-	c.RegionName = connection.RegionName
-	c.IsProxy = connection.IsProxy
-	c.Continent = connection.Continent
-	c.ContinentCode = connection.ContinentCode
+
+	// The API returns "timeZones" (array); older responses used "timeZone".
+	timeZone := details.TimeZone
+	if timeZone == "" && len(details.TimeZones) > 0 {
+		timeZone = details.TimeZones[0]
+	}
+	// "zipCode" is null for many IPs, so it is decoded as a pointer.
+	zipCode := ""
+	if details.ZipCode != nil {
+		zipCode = *details.ZipCode
+	}
+
+	c.IPVersion = details.IPVersion
+	c.Latitude = details.Latitude
+	c.Longitude = details.Longitude
+	c.CountryName = details.CountryName
+	c.CountryCode = details.CountryCode
+	c.TimeZone = timeZone
+	c.ZipCode = zipCode
+	c.CityName = details.CityName
+	c.RegionName = details.RegionName
+	c.IsProxy = details.IsProxy
+	c.Continent = details.Continent
+	c.ContinentCode = details.ContinentCode
 	return nil
 }
 

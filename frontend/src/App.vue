@@ -45,9 +45,17 @@ useWebSocket(websocketUrl,
       console.error('WebSocket error:', event);
     },
     onMessage: (_, event: MessageEvent) => {
-      // Parse message
-      const msg: ModelsConnection = JSON.parse(event.data);
-      console.log('WebSocket message received:', msg);
+      // Parse message - a malformed frame must not break the handler.
+      let msg: ModelsConnection;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (error) {
+        console.error('Ignoring malformed WebSocket message:', error);
+        return;
+      }
+      if (!msg || typeof msg !== 'object') {
+        return;
+      }
 
       // Globe WebsocketMessage handler
       if (globe.value && msg.latitude != 0 && msg.longitude != 0) {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import * as L from "leaflet";
 import "leaflet.heat";
 import { VueSpinnerPacman } from 'vue3-spinners';
@@ -59,10 +59,18 @@ onMounted(() => {
             // Load data
             if (props.apiConfiguration) {
                 new StatsApi(props.apiConfiguration).getAllLatLng().subscribe({
-                    next: (data: ModelsLatLng[]) => {
-                        if (data.length > 0) {
-                            // Find max intensity for normalization
-                            const maxIntensity = Math.max(...data.map(d => d.intensity || 1));
+                    next: (data: ModelsLatLng[] | null) => {
+                        const points = data ?? [];
+                        if (points.length > 0) {
+                            // Find max intensity for normalization without
+                            // spreading a potentially huge array into Math.max.
+                            let maxIntensity = 0;
+                            for (const item of points) {
+                                const intensity = item.intensity || 1;
+                                if (intensity > maxIntensity) {
+                                    maxIntensity = intensity;
+                                }
+                            }
                             // Set max much lower than peak to make "hot" zones redder
                             heat.setOptions({
                                 max: maxIntensity * 0.5,
@@ -71,8 +79,8 @@ onMounted(() => {
                                 minOpacity: 0.3
                             });
 
-                            const points = data.map(item => [item.latitude, item.longitude, item.intensity || 1] as [number, number, number]);
-                            heat.setLatLngs(points);
+                            const latLngs = points.map(item => [item.latitude, item.longitude, item.intensity || 1] as [number, number, number]);
+                            heat.setLatLngs(latLngs);
                         }
                     },
                     error: (error) => {
@@ -88,6 +96,15 @@ onMounted(() => {
             }
         });
     }
+});
+
+// Removes the Leaflet map and its tile layer when the component goes away.
+onUnmounted(() => {
+    if (heatmap) {
+        heatmap.remove();
+        heatmap = null;
+    }
+    heat = null;
 });
 
 // Adds a new point to the heatmap

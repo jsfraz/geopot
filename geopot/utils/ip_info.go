@@ -1,11 +1,13 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math/rand/v2"
 	"net"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -20,18 +22,24 @@ var ipInfoClient = &http.Client{
 //
 // If ipAddress is nil, it will get info about the caller's IP address
 //
+//	@param ctx
 //	@param ipAddress
 //	@return *string
 //	@return error
-func GetIpInfo(ipAddress *string) (*string, error) {
-	url := ""
+func GetIpInfo(ctx context.Context, ipAddress *string) (*string, error) {
+	requestUrl := ""
 	if ipAddress == nil {
-		url = "https://freeipapi.com/api/json"
+		requestUrl = "https://freeipapi.com/api/json"
 	} else {
-		url = fmt.Sprintf("https://freeipapi.com/api/json/%s", *ipAddress)
+		requestUrl = fmt.Sprintf("https://freeipapi.com/api/json/%s", url.PathEscape(*ipAddress))
 	}
 
-	response, err := ipInfoClient.Get(url)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := ipInfoClient.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +102,13 @@ func RandomPublicIP() string {
 }
 
 // Generating random coordinates for testing purposes
+//
+//	@param min
+//	@param max
+//	@return float64
 func RandomCoordinate(min, max float64) float64 {
-	return min + (max-min)*(min+rand.Float64()*(max-min))
+	if max < min {
+		min, max = max, min
+	}
+	return min + rand.Float64()*(max-min)
 }

@@ -42,13 +42,21 @@ func PushRecord(connection models.Connection) error {
 }
 
 // Fetch and remove the connection record from the start of the list.
+// A missing record (empty list) is reported as (nil, nil), while a Valkey
+// failure is returned as an error so callers can tell the two apart.
 //
 //	@return *models.Connection
 //	@return error
 func PopRecord() (*models.Connection, error) {
 	// Get result
 	client := utils.GetSingleton().Valkey
-	result, _ := client.Do(context.Background(), client.B().Lpop().Key("list").Build()).AsBytes()
+	result, err := client.Do(context.Background(), client.B().Lpop().Key("list").Build()).AsBytes()
+	if err != nil {
+		if valkey.IsValkeyNil(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
 	// Return nil when no result is fetched
 	if len(result) == 0 {
 		return nil, nil
@@ -83,7 +91,13 @@ func PushSelfRecord(connection models.Connection) error {
 func GetSelfRecord() (*models.Connection, error) {
 	// Get result
 	client := utils.GetSingleton().Valkey
-	result, _ := client.Do(context.Background(), client.B().Get().Key("self").Build()).AsBytes()
+	result, err := client.Do(context.Background(), client.B().Get().Key("self").Build()).AsBytes()
+	if err != nil {
+		if valkey.IsValkeyNil(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
 	// Return nil when no result is fetched
 	if len(result) == 0 {
 		return nil, nil

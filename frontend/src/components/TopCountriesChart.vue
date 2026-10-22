@@ -91,10 +91,11 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
 
 onMounted(() => {
     new StatsApi(props.apiConfiguration).getTopCountries({ limit: props.limit }).subscribe({
-        next: (data: ModelsTopEntry[]) => {
-            entries.value = data;
+        next: (data: ModelsTopEntry[] | null) => {
+            const rows = data ?? [];
+            entries.value = rows;
             // Reverse so top entry is at top of horizontal bar chart
-            const reversed = [...data].reverse();
+            const reversed = [...rows].reverse();
             chartOptions.value = {
                 ...chartOptions.value,
                 xaxis: {

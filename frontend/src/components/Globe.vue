@@ -6,6 +6,11 @@ import { Configuration } from '@/api/runtime';
 import { StatsApi } from '@/api/apis';
 import type { ModelsConnection } from '@/api/models/ModelsConnection';
 
+// Assets live in Vite's public directory; BASE_URL keeps them resolvable on
+// nested SPA routes.
+const countriesUrl = `${import.meta.env.BASE_URL}assets/ne_110m_admin_0_countries.geojson`;
+const earthUrl = `${import.meta.env.BASE_URL}assets/earth-dark.jpg`;
+
 // Define props with default values
 const props = defineProps({
     apiConfiguration: { type: Configuration, required: true },
@@ -42,11 +47,39 @@ let serverMarkerData: { lat: number; lng: number; size: number; color: string; }
 const countryCoordinatesToColor = new Map<string, string>();
 let autoRotate = props.autoRotateDefault;
 let lastTime: number | null = null;
+// Handle of the running rotation animation frame (single loop).
+let rotationFrame: number | null = null;
+// Timers that remove arcs/rings, cleared when the component goes away.
+const pendingTimers = new Set<number>();
+
+// Schedules a one-off callback and remembers it for cleanup.
+function scheduleTimer(callback: () => void, delay: number) {
+    const id = window.setTimeout(() => {
+        pendingTimers.delete(id);
+        callback();
+    }, delay);
+    pendingTimers.add(id);
+}
+
+// Cancels every pending arc/ring timer.
+function clearPendingTimers() {
+    pendingTimers.forEach(id => clearTimeout(id));
+    pendingTimers.clear();
+}
 
 onMounted(() => {
     // https://github.com/vasturiano/globe.gl/blob/master/example/hexed-polygons/index.html
-    fetch('assets/ne_110m_admin_0_countries.geojson').then(res => res.json()).then(countries => {
-        if (globeContainer.value) {
+    fetch(countriesUrl)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`Failed to load country polygons: HTTP ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(countries => {
+            if (!globeContainer.value) {
+                return;
+            }
             // Get container dimensions
             const width = globeContainer.value.clientWidth;
             const height = globeContainer.value.clientHeight;
@@ -56,7 +89,7 @@ onMounted(() => {
                 // Set height and width according to the container
                 .width(width)
                 .height(height)
-                .globeImageUrl('assets/earth-dark.jpg')
+                .globeImageUrl(earthUrl)
                 .backgroundColor('rgba(0,0,0,0)')
                 // Polygons
                 .hexPolygonsData(countries.features)
@@ -127,6 +160,11 @@ onMounted(() => {
                     if (props.apiConfiguration) {
                         new StatsApi(props.apiConfiguration).getServerInfo().subscribe({
                             next: (data) => {
+                                // The API answers with null when the server's own
+                                // record is not known yet; keep the globe usable.
+                                if (!data || data.latitude == null || data.longitude == null) {
+                                    return;
+                                }
                                 serverMarkerData = {
                                     lat: data.latitude,
                                     lng: data.longitude,
@@ -183,8 +221,13 @@ onMounted(() => {
                 .onHexPolygonClick((_) => {
                     startStopRotation();
                 });
-        }
-    });
+        })
+        .catch(error => {
+            // Without the polygons there is no globe to show, but the panel
+            // must not spin forever.
+            console.error('Error loading country polygons:', error);
+            isGlobeLoaded.value = true;
+        });
 
     // Listen for window resize events
     window.addEventListener('resize', handleResize);
@@ -199,10 +242,11 @@ function handleResize() {
     }
 }
 
-// Remove event listener on component unmount
+// Remove event listener and pending animation frames on component unmount
 onUnmounted(() => {
     window.removeEventListener('resize', handleResize);
     stopRotation();
+    clearPendingTimers();
 });
 
 // Show arc from attacker to server
@@ -235,18 +279,19 @@ function emitArc(connection: ModelsConnection) {
     };
 
     globe.arcsData([...globe.arcsData(), arc]);
-    setTimeout(() => globe!.arcsData(globe!.arcsData().filter(d => d !== arc)), props.flightTime * 2);
+    scheduleTimer(() => globe && globe.arcsData(globe.arcsData().filter(d => d !== arc)), props.flightTime * 2);
 
     // Add and remove start rings
     const srcRing = { lat: start.lat, lng: start.lng, color: arcColor };
     globe.ringsData([...globe.ringsData(), srcRing]);
-    setTimeout(() => globe!.ringsData(globe!.ringsData().filter(r => r !== srcRing)), props.flightTime * props.arcRelLength);
+    scheduleTimer(() => globe && globe.ringsData(globe.ringsData().filter(r => r !== srcRing)), props.flightTime * props.arcRelLength);
 
     // Add and remove target rings
-    setTimeout(() => {
+    scheduleTimer(() => {
+        if (!globe) return;
         const targetRing = { lat: end.lat, lng: end.lng, color: arcColor };
-        globe!.ringsData([...globe!.ringsData(), targetRing]);
-        setTimeout(() => globe!.ringsData(globe!.ringsData().filter(r => r !== targetRing)), props.flightTime * props.arcRelLength);
+        globe.ringsData([...globe.ringsData(), targetRing]);
+        scheduleTimer(() => globe && globe.ringsData(globe.ringsData().filter(r => r !== targetRing)), props.flightTime * props.arcRelLength);
     }, props.flightTime);
 }
 
@@ -283,40 +328,48 @@ function getCountryColorFromCoordinates(lat: number, lng: number, countryName?: 
 
 // Function to update rotation
 function updateRotation(time: number) {
-    if (autoRotate && globe) {
-        if (lastTime !== null) {
-            const deltaT = time - lastTime;
-            const rotation = globe.pointOfView();
-            globe.pointOfView({
-                ...rotation,
-                lng: rotation.lng + (props.rotationSpeed * deltaT / 1000) % 360
-            });
-        }
-        lastTime = time;
-        requestAnimationFrame(updateRotation);
+    rotationFrame = null;
+    if (!autoRotate || !globe) {
+        return;
     }
+    if (lastTime !== null) {
+        const deltaT = time - lastTime;
+        const rotation = globe.pointOfView();
+        globe.pointOfView({
+            ...rotation,
+            lng: rotation.lng + (props.rotationSpeed * deltaT / 1000) % 360
+        });
+    }
+    lastTime = time;
+    rotationFrame = requestAnimationFrame(updateRotation);
 }
 
 // Start rotation
 function startRotation() {
     autoRotate = true;
     lastTime = null;
-    requestAnimationFrame(updateRotation);
+    // Never schedule a second animation loop.
+    if (rotationFrame === null) {
+        rotationFrame = requestAnimationFrame(updateRotation);
+    }
 }
 
 // Stop rotation
 function stopRotation() {
     autoRotate = false;
     lastTime = null;
+    if (rotationFrame !== null) {
+        cancelAnimationFrame(rotationFrame);
+        rotationFrame = null;
+    }
 }
 
 // Start or stop rotation
 function startStopRotation() {
-    autoRotate = !autoRotate;
-    if (!autoRotate) {
-        lastTime = null;
+    if (autoRotate) {
+        stopRotation();
     } else {
-        requestAnimationFrame(updateRotation);
+        startRotation();
     }
 }
 </script>
