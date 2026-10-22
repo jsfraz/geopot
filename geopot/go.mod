@@ -1,13 +1,13 @@
 module jsfraz/geopot
 
-go 1.26.1
+go 1.26.10
 
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/gorilla/websocket v1.5.3
 	github.com/loopfz/gadgeto v0.11.6
 	github.com/valkey-io/valkey-go v1.0.72
-	golang.org/x/crypto v0.48.0
+	golang.org/x/crypto v0.57.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
 )
@@ -35,28 +35,27 @@ require (
 	github.com/onsi/gomega v1.39.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/quic-go/qpack v0.6.0 // indirect
-	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/quic-go/quic-go v0.59.1 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	golang.org/x/arch v0.25.0 // indirect
-	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	sigs.k8s.io/yaml v1.6.0 // indirect
 )
 
 require (
-	github.com/gin-contrib/cors v1.7.6
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
-	github.com/jackc/pgx/v5 v5.8.0 // indirect
+	github.com/jackc/pgx/v5 v5.9.2 // indirect
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/wI2L/fizz v0.23.0
-	golang.org/x/sync v0.20.0 // indirect
-	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.35.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
 )

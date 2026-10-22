@@ -38,6 +38,9 @@ services:
       - VALKEY_PASSWORD=${VALKEY_PASSWORD}
       - VALKEY_SERVER=geopot-valkey
       - VALKEY_PORT=6379
+      # Only the local reverse proxy may set X-Forwarded-For.
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-172.16.0.0/12,127.0.0.1/8}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-}
     ports:
       - "22:2222"
       - "127.0.0.1:8080:8080"

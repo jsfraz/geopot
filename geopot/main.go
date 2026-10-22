@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"net"
 	"net/http"
@@ -15,7 +16,11 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const rateLimit = time.Millisecond * 1050
+const (
+	rateLimit           = time.Millisecond * 1050
+	sshHandshakeTimeout = 30 * time.Second
+	acceptRetryDelay    = 100 * time.Millisecond
+)
 
 func main() {
 	// Logging
@@ -24,14 +29,14 @@ func main() {
 
 	// Load config
 	utils.LoadConfig()
+	config := utils.GetSingleton().Config
 
 	// Setup databases
 	database.SetupPostgres()
 	database.SetupValkey()
 
 	// Initialize WebSocket manager
-	utils.GetSingleton().WebSocketManager = utils.NewWebSocketManager()
-	go utils.GetSingleton().WebSocketManager.Start()
+	utils.GetSingleton().WebSocketManager = utils.NewWebSocketManager(config.WebSocketMaxClients)
 
 	// Get router or panic
 	router, err := routes.NewRouter()
@@ -40,12 +45,17 @@ func main() {
 	}
 	// Start HTTP server
 	srv := &http.Server{
-		Addr:    "0.0.0.0:8080",
-		Handler: router,
+		Addr:              "0.0.0.0:8080",
+		Handler:           router,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    1 << 20,
 	}
 	// Start server in separated goroutine, panic on error
 	go func() {
-		if err := srv.ListenAndServe(); err != nil {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Panicln(err)
 		}
 	}()
@@ -58,7 +68,10 @@ func main() {
 	sshConfig := &ssh.ServerConfig{
 		PasswordCallback: func(conn ssh.ConnMetadata, password []byte) (*ssh.Permissions, error) {
 			timestamp := time.Now()
-			log.Printf("Unsuccessful login attempt from %s by user '%s' with password '%s'.", conn.RemoteAddr(), conn.User(), password)
+			// Sanitize attacker-controlled values before logging/storing them.
+			user := utils.SanitizeCredential(conn.User())
+			passwordValue := utils.SanitizeCredential(string(password))
+			log.Printf("Unsuccessful login attempt from %s by user %q with password %q.", conn.RemoteAddr(), user, passwordValue)
 			// Split IP and port
 			host, _, err := net.SplitHostPort(conn.RemoteAddr().String())
 			if err != nil {
@@ -66,11 +79,11 @@ func main() {
 				return nil, ssh.ErrNoAuth
 			}
 			// Upload to Valkey or Postgres (check if address is public)
-			connection := models.NewConnection(host, conn.User(), string(password), timestamp)
+			connection := models.NewConnection(host, user, passwordValue, timestamp)
 			if !utils.IsPublicIP(connection.IPAddress) {
 
 				// Generate random coordinates (for localhost testing purposes)
-				if utils.GetSingleton().Config.GinMode == "debug" {
+				if config.IsDebug() {
 					connection.IPVersion = 4
 					connection.IPAddress = utils.RandomPublicIP()
 					connection.Longitude = utils.RandomCoordinate(-180.0, 180.0)
@@ -101,7 +114,7 @@ func main() {
 	}
 
 	// Generating private key
-	privateKey, err := utils.GeneratePrivateKey("private_key.pem")
+	privateKey, err := utils.GeneratePrivateKey(config.SSHKeyPath)
 	if err != nil {
 		log.Fatalf("Failed to generate or load host key: %v", err)
 	}
@@ -117,13 +130,35 @@ func main() {
 	// API call goroutine
 	go burstRateLimitCall(context.Background(), 60)
 
+	// Bound the number of concurrent SSH connections so a flood cannot
+	// exhaust file descriptors or goroutines.
+	maxConnections := config.SSHMaxConnections
+	if maxConnections <= 0 {
+		maxConnections = 1024
+	}
+	connectionSlots := make(chan struct{}, maxConnections)
+
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			log.Fatalf("Failed to accept incoming connection: %v", err)
+			if errors.Is(err, net.ErrClosed) {
+				return
+			}
+			log.Printf("Failed to accept incoming connection: %v", err)
+			time.Sleep(acceptRetryDelay)
 			continue
 		}
-		go handleConnection(conn, sshConfig)
+
+		select {
+		case connectionSlots <- struct{}{}:
+			go func() {
+				defer func() { <-connectionSlots }()
+				handleConnection(conn, sshConfig)
+			}()
+		default:
+			log.Printf("Rejecting connection from %s: too many concurrent connections", conn.RemoteAddr())
+			_ = conn.Close()
+		}
 	}
 }
 
@@ -132,7 +167,12 @@ func main() {
 //	@param conn
 //	@param config
 func handleConnection(conn net.Conn, config *ssh.ServerConfig) {
+	defer conn.Close()
+
+	// Do not let unauthenticated clients hold a connection open forever.
+	_ = conn.SetDeadline(time.Now().Add(sshHandshakeTimeout))
 	sshConn, _, _, err := ssh.NewServerConn(conn, config)
+	_ = conn.SetDeadline(time.Time{})
 	if err != nil {
 		return
 	}

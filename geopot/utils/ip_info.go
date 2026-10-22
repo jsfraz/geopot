@@ -6,7 +6,15 @@ import (
 	"math/rand/v2"
 	"net"
 	"net/http"
+	"time"
 )
+
+// Maximum size of the upstream IP geolocation response we are willing to read.
+const maxIpInfoResponseSize = 1 << 20 // 1 MiB
+
+var ipInfoClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
 
 // Get details about IP address from https://docs.freeipapi.com/
 //
@@ -23,17 +31,17 @@ func GetIpInfo(ipAddress *string) (*string, error) {
 		url = fmt.Sprintf("https://freeipapi.com/api/json/%s", *ipAddress)
 	}
 
-	response, err := http.Get(url)
+	response, err := ipInfoClient.Get(url)
 	if err != nil {
-		return nil, err
-	}
-	if response.StatusCode != 200 {
-		err = fmt.Errorf("status code %s", response.Status)
 		return nil, err
 	}
 	defer response.Body.Close()
 
-	body, err := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code %s", response.Status)
+	}
+
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxIpInfoResponseSize))
 	if err != nil {
 		return nil, err
 	}

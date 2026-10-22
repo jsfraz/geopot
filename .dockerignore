@@ -1,0 +1,18 @@
+# Version control and local tooling
+.git
+.gitignore
+.github
+.vscode
+
+# Secrets must never enter the build context
+**/*.pem
+**/.env
+**/.env.*
+!**/.env.example
+
+# Local build artifacts
+frontend/node_modules
+frontend/dist
+geopot/tmp_geopot
+frontend.png
+README.md
