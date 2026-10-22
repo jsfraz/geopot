@@ -4,13 +4,17 @@ on:
   push:
     branches: [ "master" ]
 
+# Least privilege: only read the repository and push the built image.
+permissions:
+  contents: read
+  packages: write
+
 jobs:
 
   build-and-push:
     runs-on: ubuntu-latest
-    permissions: write-all
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Build and push Docker image
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

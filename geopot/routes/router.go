@@ -1,12 +1,15 @@
 package routes
 
 import (
+	"errors"
 	"fmt"
 	"jsfraz/geopot/handlers"
 	"jsfraz/geopot/utils"
+	"log"
+	"net/http"
 
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/loopfz/gadgeto/tonic"
 
 	"github.com/wI2L/fizz"
 	"github.com/wI2L/fizz/openapi"
@@ -17,22 +20,46 @@ import (
 //	@return *fizz.Fizz
 //	@return error
 func NewRouter() (*fizz.Fizz, error) {
+	config := utils.GetSingleton().Config
+
+	// Keep Gin's internal mode in sync with our config (release by default).
+	if config.IsDebug() {
+		gin.SetMode(gin.DebugMode)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	// Gin instance
 	engine := gin.New()
-	// Logger middleware
-	if utils.GetSingleton().Config.GinMode != "release" {
+	// Logger middleware (debug only, to avoid logging captured credentials in production)
+	if config.IsDebug() {
 		engine.Use(gin.Logger())
-	} else {
-		// No Gin logging in release mode
 	}
 	// Recovery middleware
 	engine.Use(gin.Recovery())
-	// Default cors config, Allow Origin
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowCredentials = true
-	config.AllowHeaders = append(config.AllowHeaders, "x-requested-with") // Vue.js sends this header for some reason
-	engine.Use(cors.New(config))
+
+	// Only trust forwarded headers from explicitly configured proxies.
+	if err := engine.SetTrustedProxies(config.TrustedProxies); err != nil {
+		return nil, fmt.Errorf("invalid TRUSTED_PROXIES: %w", err)
+	}
+
+	// Security headers, CORS and API rate limiting
+	engine.Use(securityHeaders(config.IsDebug()))
+	engine.Use(corsMiddleware())
+	// Compression must come after CORS: preflight requests are answered with an
+	// empty 204 and must not carry a Content-Encoding header.
+	engine.Use(gzipMiddleware())
+	engine.Use(rateLimitMiddleware(utils.NewRateLimiter(config.APIRateLimitPerMinute)))
+
+	// Never leak internal (e.g. database) errors to API clients.
+	tonic.SetErrorHook(func(c *gin.Context, err error) (int, interface{}) {
+		var bindError tonic.BindError
+		if errors.As(err, &bindError) {
+			return http.StatusBadRequest, gin.H{"error": "invalid request"}
+		}
+		log.Printf("API error on %s %s: %v", c.Request.Method, c.Request.URL.Path, err)
+		return http.StatusInternalServerError, gin.H{"error": "internal server error"}
+	})
 
 	// Fizz instance
 	fizz := fizz.NewFromEngine(engine)
@@ -41,7 +68,7 @@ func NewRouter() (*fizz.Fizz, error) {
 	grp := fizz.Group("api", "", "")
 
 	// OpenAPI spec
-	if utils.GetSingleton().Config.GinMode != "release" {
+	if config.IsDebug() {
 		// Servers
 		fizz.Generator().SetServers([]*openapi.Server{
 			{
@@ -81,10 +108,7 @@ func NewRouter() (*fizz.Fizz, error) {
 	}
 
 	// Static files (frontend) - must be after defining all API routes
-	engine.NoRoute(func(c *gin.Context) {
-		// Try to serve static file
-		c.File("./static" + c.Request.URL.Path)
-	})
+	engine.NoRoute(staticHandler("./static"))
 
 	return fizz, nil
 }

@@ -1,23 +1,44 @@
 <script setup lang="ts">
 import { useWebSocket } from '@vueuse/core';
-import Globe from './components/Globe.vue';
-import Heatmap from './components/Heatmap.vue';
+import { defineAsyncComponent, h, ref } from 'vue';
+import { VueSpinnerPulse } from 'vue3-spinners';
 import StatCard from './components/StatCard.vue';
-import ConnectionsChart from './components/ConnectionsChart.vue';
-import TopCountriesChart from './components/TopCountriesChart.vue';
-import CredentialsTable from './components/CredentialsTable.vue';
 import LiveFeed from './components/LiveFeed.vue';
-import { Configuration, StatsApi } from './api';
-import { ref } from 'vue';
-import type { ModelsConnection } from './api/models/ModelsConnection';
+import CredentialsTable from './components/CredentialsTable.vue';
 import ServerInfoCard from './components/ServerInfoCard.vue';
+import { Configuration, StatsApi } from './api';
+import type { ModelsConnection } from './api/models/ModelsConnection';
+
+// The panels below pull in three.js, Leaflet and ApexCharts (~3 MB combined),
+// so they are loaded as separate chunks. The stat cards paint while those
+// chunks are still downloading, and the fallback keeps the grid from shifting.
+const PanelFallback = () => h(
+  'div',
+  { class: 'hud-card w-full h-full flex items-center justify-center rounded-sm' },
+  [h(VueSpinnerPulse, { size: '10', color: '#20c20e' })]
+);
+
+const asyncPanel = (loader: () => Promise<unknown>) => defineAsyncComponent({
+  loader: loader as never,
+  loadingComponent: PanelFallback,
+  delay: 0,
+});
+
+const Globe = asyncPanel(() => import('./components/Globe.vue'));
+const Heatmap = asyncPanel(() => import('./components/Heatmap.vue'));
+const ConnectionsChart = asyncPanel(() => import('./components/ConnectionsChart.vue'));
+const TopCountriesChart = asyncPanel(() => import('./components/TopCountriesChart.vue'));
+
+// Public methods exposed by the async panels.
+type GlobeHandle = { emitArc: (connection: ModelsConnection) => void };
+type HeatmapHandle = { addPoint: (lat: number, lng: number) => void };
 
 // WebSocket URL
 const websocketUrl = import.meta.env.DEV ? 'ws://localhost:8080/ws' : `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws`;
 // Globe component
-const globe = ref<InstanceType<typeof Globe> | null>(null);
+const globe = ref<GlobeHandle | null>(null);
 // Heatmap component
-const heatmap = ref<InstanceType<typeof Heatmap> | null>(null);
+const heatmap = ref<HeatmapHandle | null>(null);
 // LiveFeed component
 const liveFeed = ref<InstanceType<typeof LiveFeed> | null>(null);
 // API client config and instances
@@ -45,9 +66,17 @@ useWebSocket(websocketUrl,
       console.error('WebSocket error:', event);
     },
     onMessage: (_, event: MessageEvent) => {
-      // Parse message
-      const msg: ModelsConnection = JSON.parse(event.data);
-      console.log('WebSocket message received:', msg);
+      // Parse message - a malformed frame must not break the handler.
+      let msg: ModelsConnection;
+      try {
+        msg = JSON.parse(event.data);
+      } catch (error) {
+        console.error('Ignoring malformed WebSocket message:', error);
+        return;
+      }
+      if (!msg || typeof msg !== 'object') {
+        return;
+      }
 
       // Globe WebsocketMessage handler
       if (globe.value && msg.latitude != 0 && msg.longitude != 0) {

@@ -1,4 +1,5 @@
 __debug_bin*
+tmp_geopot
 private_key.pem
 static/*
 !static/README.md

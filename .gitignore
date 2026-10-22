@@ -1,2 +1,4 @@
-.env.dev*
-
+.env
+.env.*
+!.env.example
+*.pem

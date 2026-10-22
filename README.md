@@ -34,17 +34,38 @@ For deploying behind a reverse proxy see [nginx configuration](geopot.conf).
 
 ### Example `.env` environmental variables  (see [`.env.example`](.env.example))
 
-| Variable          | Description           |
-|-------------------|-----------------------|
-| GIN_MODE          | Production/debug mode |
-| POSTGRES_USER     | PostgreSQL user       |
-| POSTGRES_PASSWORD | PostgreSQL password   |
-| POSTGRES_SERVER   | PostgreSQL server     |
-| POSTGRES_PORT     | PostgreSQL port       |
-| POSTGRES_DB       | PostgreSQL database   |
-| VALKEY_PASSWORD   | Valkey password       |
-| VALKEY_SERVER     | Valkey server         |
-| VALKEY_PORT       | Valkey port           |
+| Variable                    | Description                                                        |
+|-----------------------------|--------------------------------------------------------------------|
+| GIN_MODE                    | `release` (default). Use `debug` only for local development.       |
+| POSTGRES_USER               | PostgreSQL user                                                    |
+| POSTGRES_PASSWORD           | PostgreSQL password (use a strong, unique value)                   |
+| POSTGRES_SERVER             | PostgreSQL server                                                  |
+| POSTGRES_PORT               | PostgreSQL port                                                    |
+| POSTGRES_DB                 | PostgreSQL database                                                |
+| VALKEY_PASSWORD             | Valkey password (use a strong, unique value)                       |
+| VALKEY_SERVER               | Valkey server                                                      |
+| VALKEY_PORT                 | Valkey port                                                        |
+| ALLOWED_ORIGINS             | Comma separated cross-origin allowlist. Empty = same-origin only.  |
+| TRUSTED_PROXIES             | Comma separated reverse proxy IPs/CIDRs allowed to set `X-Forwarded-For`. Empty = ignore the header. |
+| API_RATE_LIMIT_PER_MINUTE   | Per-IP limit for `/api/*` and `/ws` (default `120`)                |
+| WEBSOCKET_MAX_CLIENTS       | Maximum concurrent WebSocket clients (default `1000`)              |
+| SSH_MAX_CONNECTIONS         | Maximum concurrent SSH connections (default `1024`)                |
+| SSH_KEY_PATH                | Path to the SSH host key (default `private_key.pem`)               |
+
+### Security notes
+
+- `GIN_MODE` defaults to `release`. Debug mode exposes Swagger/OpenAPI and
+  enables verbose SQL logging (which contains captured credentials), so only
+  enable it locally.
+- The container runs as unprivileged user/group `10001:10001`. The mounted
+  `private_key.pem` must be readable by it:
+  `sudo chown 10001:10001 private_key.pem && sudo chmod 600 private_key.pem`.
+  If the file is missing, the app generates one inside `/app` (persist it with a
+  volume if you want a stable host key).
+- When running behind nginx, set `TRUSTED_PROXIES` to the proxy address and
+  keep `127.0.0.1:8080` bound to localhost (as in the example compose file).
+- Generate all secrets with `openssl rand -base64 32`; never deploy the
+  `change-me` placeholders from `.env.example`.
 
 ### TODO Example nginx configuration
 
@@ -53,7 +74,7 @@ For deploying behind a reverse proxy see [nginx configuration](geopot.conf).
 ### Local build
 
 ```bash
-sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
+sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d
 ```
 
 ### Testing `localhost:2222`
@@ -64,4 +85,4 @@ sudo docker compose -f docker-compose.dev.yml --env-file .env.dev up -d --build
 
 ### Swagger UI
 
-Swagger UI is available at `http://localhost:8080/swagger` after starting development mode.
+Swagger UI is available at `http://localhost:8080/swagger` after starting development mode. Set `GIN_MODE=debug` (the `.vscode` launch configuration does this via `.env.dev`); it is disabled in the default `release` mode.

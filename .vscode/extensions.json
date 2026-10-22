@@ -1,5 +1,6 @@
 {
   "recommendations": [
+    "golang.go",
     "davidanson.vscode-markdownlint",
     "gruntfuggly.todo-tree",
     "wakatime.vscode-wakatime",

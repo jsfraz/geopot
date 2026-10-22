@@ -1,39 +1,55 @@
 package utils
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"math/rand/v2"
 	"net"
 	"net/http"
+	"net/url"
+	"time"
 )
+
+// Maximum size of the upstream IP geolocation response we are willing to read.
+const maxIpInfoResponseSize = 1 << 20 // 1 MiB
+
+var ipInfoClient = &http.Client{
+	Timeout: 10 * time.Second,
+}
 
 // Get details about IP address from https://docs.freeipapi.com/
 //
 // If ipAddress is nil, it will get info about the caller's IP address
 //
+//	@param ctx
 //	@param ipAddress
 //	@return *string
 //	@return error
-func GetIpInfo(ipAddress *string) (*string, error) {
-	url := ""
+func GetIpInfo(ctx context.Context, ipAddress *string) (*string, error) {
+	requestUrl := ""
 	if ipAddress == nil {
-		url = "https://freeipapi.com/api/json"
+		requestUrl = "https://freeipapi.com/api/json"
 	} else {
-		url = fmt.Sprintf("https://freeipapi.com/api/json/%s", *ipAddress)
+		requestUrl = fmt.Sprintf("https://freeipapi.com/api/json/%s", url.PathEscape(*ipAddress))
 	}
 
-	response, err := http.Get(url)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, requestUrl, nil)
 	if err != nil {
 		return nil, err
 	}
-	if response.StatusCode != 200 {
-		err = fmt.Errorf("status code %s", response.Status)
+
+	response, err := ipInfoClient.Do(request)
+	if err != nil {
 		return nil, err
 	}
 	defer response.Body.Close()
 
-	body, err := io.ReadAll(response.Body)
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code %s", response.Status)
+	}
+
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxIpInfoResponseSize))
 	if err != nil {
 		return nil, err
 	}
@@ -86,6 +102,13 @@ func RandomPublicIP() string {
 }
 
 // Generating random coordinates for testing purposes
+//
+//	@param min
+//	@param max
+//	@return float64
 func RandomCoordinate(min, max float64) float64 {
-	return min + (max-min)*(min+rand.Float64()*(max-min))
+	if max < min {
+		min, max = max, min
+	}
+	return min + rand.Float64()*(max-min)
 }

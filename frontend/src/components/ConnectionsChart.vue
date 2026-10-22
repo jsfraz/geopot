@@ -94,10 +94,11 @@ const chartOptions = ref<ApexCharts.ApexOptions>({
 function loadData(hours: number) {
     isLoaded.value = false;
     new StatsApi(props.apiConfiguration).getHourlyStats({ hours: hours }).subscribe({
-        next: (data: ModelsHourlyStat[]) => {
+        next: (data: ModelsHourlyStat[] | null) => {
+            const rows = data ?? [];
             series.value = [{
                 name: 'Connections',
-                data: data.map(d => ({
+                data: rows.map(d => ({
                     x: new Date(d.bucket ?? '').getTime(),
                     y: d.count ?? 0,
                 })),

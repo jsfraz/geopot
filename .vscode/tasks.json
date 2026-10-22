@@ -5,7 +5,7 @@
       "label": "vite-dev",
       "type": "shell",
       "isBackground": true,
-      "command": "cd ${workspaceFolder}/frontend && npm run dev",
+      "command": "[ -s \"$HOME/.nvm/nvm.sh\" ] && . \"$HOME/.nvm/nvm.sh\"; cd ${workspaceFolder}/frontend && npm run dev",
       "presentation": {
         "reveal": "always",
         "panel": "dedicated"

@@ -61,9 +61,20 @@ function addEntry(connection: ModelsConnection) {
 
 onMounted(() => {
     new StatsApi(props.apiConfiguration).getRecentConnections({ limit: props.initialLimit }).subscribe({
-        next: (data: ModelsConnection[]) => {
+        next: (data: ModelsConnection[] | null) => {
             // getRecentConnections returns newest-first, reverse for chronological order
-            entries.value = [...data].reverse();
+            const historical = [...(data ?? [])].reverse();
+            // Entries that arrived over the WebSocket while this request was in
+            // flight must not be lost (and must not be duplicated by the
+            // snapshot), so merge both by id.
+            const merged = new Map<string, ModelsConnection>();
+            for (const entry of [...historical, ...entries.value]) {
+                const key = entry.id != null ? String(entry.id) : `${entry.timestamp}-${entry.ipAddress}-${entry.user}`;
+                merged.set(key, entry);
+            }
+            entries.value = [...merged.values()]
+                .sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
+                .slice(-props.maxEntries);
         },
         error: (err) => {
             console.error('LiveFeed error:', err);

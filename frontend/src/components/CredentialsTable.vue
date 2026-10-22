@@ -22,12 +22,12 @@ onMounted(() => {
     const checkDone = () => { if (usersDone && passsDone) isLoaded.value = true; };
 
     api.getTopUsernames({ limit: props.limit }).subscribe({
-        next: (data) => { usernames.value = data; },
+        next: (data) => { usernames.value = data ?? []; },
         error: () => { usersDone = true; checkDone(); },
         complete: () => { usersDone = true; checkDone(); },
     });
     api.getTopPasswords({ limit: props.limit }).subscribe({
-        next: (data) => { passwords.value = data; },
+        next: (data) => { passwords.value = data ?? []; },
         error: () => { passsDone = true; checkDone(); },
         complete: () => { passsDone = true; checkDone(); },
     });

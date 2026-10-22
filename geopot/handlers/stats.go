@@ -68,6 +68,12 @@ func GetServerInfo(c *gin.Context) (*models.Connection, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The record is written at startup and refreshed periodically; if it is
+	// missing (Valkey was flushed or the upstream API was down), repopulate it
+	// in the background and answer with what is currently known.
+	if connection == nil {
+		database.TriggerSelfIpRefresh()
+	}
 	return connection, nil
 }
 
@@ -152,9 +158,10 @@ func GetTopPasswords(c *gin.Context, input *models.TopNInput) (*[]models.TopEntr
 	return &entries, nil
 }
 
-// RecentConnectionsInput contains a limit query param.
+// RecentConnectionsInput contains a limit query param. An omitted limit is
+// validated as empty and replaced by the handler's default.
 type RecentConnectionsInput struct {
-	Limit int `query:"limit" validate:"min=1,max=500"`
+	Limit int `query:"limit" validate:"omitempty,min=1,max=500"`
 }
 
 // GetRecentConnections returns the N most recent connection attempts.
