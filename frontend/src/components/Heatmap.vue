@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import * as L from "leaflet";
+// Default import on purpose: `leaflet.heat` is a legacy UMD plugin that only
+// patches Leaflet's exports object (the same one Leaflet assigns to
+// `window.L`). A namespace import (`import * as L`) gives Rollup/Rolldown a
+// *copy* of those exports made before the plugin runs, so `heatLayer` is
+// missing there in production builds even though it works in dev.
+import L from "leaflet";
 import "leaflet.heat";
 import { VueSpinnerPacman } from 'vue3-spinners';
 import { Configuration } from '@/api/runtime';
