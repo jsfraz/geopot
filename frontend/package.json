@@ -36,11 +36,7 @@
     "npm-run-all2": "^8.0.4",
     "tailwindcss": "^4.1.13",
     "typescript": "~5.8.0",
-<<<<<<< HEAD
-    "vite": "^7.3.7",
-=======
     "vite": "^8.0.16",
->>>>>>> origin/master
     "vite-plugin-vue-devtools": "^8.0.0",
     "vue-tsc": "^3.0.4"
   }
