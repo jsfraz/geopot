@@ -5,6 +5,9 @@ import (
 	"jsfraz/geopot/models"
 	"jsfraz/geopot/utils"
 	"log"
+	"net"
+	"net/url"
+	"strconv"
 	"time"
 
 	"gorm.io/driver/postgres"
@@ -26,14 +29,37 @@ var continuousAggregates = []string{
 	"stats_password_hourly",
 }
 
+// Builds the Postgres connection URI. Every component is percent-encoded, so
+// passwords containing "@", ":", "/", "?", "#", "%", whitespace or non-ASCII
+// characters survive the URI parser unchanged (pgx v5.11.0 terminates the
+// userinfo at the first "@" before any "/", like libpq).
+//
+//	@param user
+//	@param password
+//	@param server
+//	@param db
+//	@param port
+//	@return string
+func postgresConnString(user, password, server, db string, port int) string {
+	u := &url.URL{
+		Scheme: "postgresql",
+		User:   url.UserPassword(user, password),
+		// JoinHostPort keeps IPv6 literals bracketed.
+		Host: net.JoinHostPort(server, strconv.Itoa(port)),
+		Path: "/" + db,
+	}
+	return u.String()
+}
+
 // Setup Postgres connection with TimescaleDB
 func SetupPostgres() {
-	connStr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s",
-		utils.GetSingleton().Config.PostgresUser,
-		utils.GetSingleton().Config.PostgresPassword,
-		utils.GetSingleton().Config.PostgresServer,
-		utils.GetSingleton().Config.PostgresPort,
-		utils.GetSingleton().Config.PostgresDb,
+	config := utils.GetSingleton().Config
+	connStr := postgresConnString(
+		config.PostgresUser,
+		config.PostgresPassword,
+		config.PostgresServer,
+		config.PostgresDb,
+		config.PostgresPort,
 	)
 	postgres, err := gorm.Open(postgres.Open(connStr), &gorm.Config{
 		Logger: logger.Default.LogMode(utils.GetSingleton().Config.GetGormLogLevel()),
